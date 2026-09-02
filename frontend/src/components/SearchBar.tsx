@@ -1,6 +1,5 @@
 import React from 'react';
-import { Search } from 'lucide-react';
-import { triggerHaptic } from '../utils/hapticsService';
+import { Search, X, Filter } from 'lucide-react';
 
 interface SearchBarProps {
   searchQuery: string;
@@ -19,11 +18,6 @@ export const SearchBar: React.FC<SearchBarProps> = ({
   categories,
   totalResults,
 }) => {
-  const handleCategorySelect = (cat: string) => {
-    triggerHaptic('light');
-    onCategoryChange(cat);
-  };
-
   return (
     <div className="space-y-3 mb-6">
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
@@ -35,15 +29,12 @@ export const SearchBar: React.FC<SearchBarProps> = ({
             placeholder="Search by name, notes..."
             value={searchQuery}
             onChange={(e) => onSearchChange(e.target.value)}
-            className="w-full pl-9 pr-8 py-2.5 rounded-2xl bg-white border border-slate-200/90 text-xs sm:text-sm font-medium text-slate-800 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent shadow-xs transition-all"
+            className="w-full pl-9 pr-8 py-2.5 rounded-2xl bg-white border border-warm-200 text-xs sm:text-sm font-medium text-slate-800 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent shadow-sm transition-all"
           />
           {searchQuery && (
             <button
               type="button"
-              onClick={() => {
-                triggerHaptic('light');
-                onSearchChange('');
-              }}
+              onClick={() => onSearchChange('')}
               className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 rounded-full bg-slate-200 hover:bg-slate-300 text-slate-600 flex items-center justify-center text-[10px] transition-colors"
               title="Clear search"
             >
@@ -54,7 +45,7 @@ export const SearchBar: React.FC<SearchBarProps> = ({
 
         {/* Counter Badge */}
         <div className="text-xs text-slate-500 font-semibold self-end sm:self-center">
-          Showing <strong className="text-purple-700 font-extrabold">{totalResults}</strong> {totalResults === 1 ? 'buddy' : 'buddies'}
+          Showing <strong className="text-purple-700">{totalResults}</strong> {totalResults === 1 ? 'person' : 'people'}
         </div>
       </div>
 
@@ -66,11 +57,11 @@ export const SearchBar: React.FC<SearchBarProps> = ({
             <button
               type="button"
               key={cat}
-              onClick={() => handleCategorySelect(cat)}
-              className={`px-3 py-1.5 rounded-xl text-xs font-bold whitespace-nowrap transition-all active:scale-95 ${
+              onClick={() => onCategoryChange(cat)}
+              className={`px-3 py-1.5 rounded-xl text-xs font-bold whitespace-nowrap transition-all ${
                 isSelected
-                  ? 'bg-slate-900 text-white shadow-xs'
-                  : 'bg-white border border-slate-200 text-slate-600 hover:bg-slate-50'
+                  ? 'bg-slate-900 text-white shadow-sm scale-105'
+                  : 'bg-white border border-warm-200 text-slate-600 hover:bg-warm-100/60'
               }`}
             >
               {cat}

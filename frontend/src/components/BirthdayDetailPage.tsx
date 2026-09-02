@@ -2,15 +2,14 @@ import React, { useState, useEffect } from 'react';
 import { 
   ArrowLeft, 
   Calendar, 
-  Clock, 
-  PartyPopper, 
   Sparkles, 
-  MessageSquare, 
   Copy, 
   Check, 
   Share2, 
   Send, 
-  RefreshCw, 
+  RotateCw, 
+  PartyPopper, 
+  Clock, 
   Edit3, 
   Trash2, 
   AlertTriangle 
@@ -19,7 +18,6 @@ import { Person, PersonInput } from '../types';
 import { formatBirthdayDate, getCountdownBadge, getZodiacSign } from '../utils/dateUtils';
 import { getRandomMessage, MessageStyle, MESSAGE_STYLES } from '../utils/messageTemplates';
 import { triggerCelebration } from '../utils/celebrationService';
-import { triggerHaptic } from '../utils/hapticsService';
 import { EditPersonModal } from './EditPersonModal';
 import { pushNav, popNav } from '../utils/navigation';
 
@@ -99,7 +97,6 @@ export const BirthdayDetailPage: React.FC<BirthdayDetailPageProps> = ({
 
   // Tone Selection Handler
   const handleSelectStyle = (style: MessageStyle) => {
-    triggerHaptic('light');
     setSelectedStyle(style);
     const msg = getRandomMessage(style, currentPerson.name);
     setGeneratedMessage(msg);
@@ -107,200 +104,132 @@ export const BirthdayDetailPage: React.FC<BirthdayDetailPageProps> = ({
 
   // Regenerate / Shuffle Handler
   const handleRegenerate = () => {
-    triggerHaptic('light');
     setIsRotating(true);
     const msg = getRandomMessage(selectedStyle, currentPerson.name, generatedMessage);
     setGeneratedMessage(msg);
     setTimeout(() => setIsRotating(false), 300);
   };
 
-  // Safe Universal Clipboard Copy Helper
-  const copyWishToClipboard = (text: string) => {
-    try {
-      if (navigator.clipboard && navigator.clipboard.writeText) {
-        navigator.clipboard.writeText(text).catch(() => {});
-      }
-    } catch {
-      // Ignore
-    }
-  };
-
-  // 1. WhatsApp Action
+  // 1-Tap Social Action Handlers
   const handleSendWhatsApp = () => {
-    triggerHaptic('light');
-    const msg = generatedMessage.trim();
-    if (!msg) return;
-    const encoded = encodeURIComponent(msg);
-    const whatsappUrl = `https://api.whatsapp.com/send?text=${encoded}`;
-    window.open(whatsappUrl, '_blank', 'noopener,noreferrer');
+    const text = encodeURIComponent(generatedMessage);
+    window.open(`https://api.whatsapp.com/send?text=${text}`, '_blank');
   };
 
-  // 2. Instagram Action (Copies wish & opens Instagram Direct Inbox)
   const handleSendInstagram = () => {
-    triggerHaptic('light');
-    const msg = generatedMessage.trim();
-    if (!msg) return;
-    copyWishToClipboard(msg);
-    showToast('Wish copied! Paste into Instagram DM 📸');
-    window.open('https://www.instagram.com/direct/inbox/', '_blank', 'noopener,noreferrer');
+    navigator.clipboard.writeText(generatedMessage);
+    showToast('Wish copied! Paste into your Instagram DM or Story 📸');
+    setTimeout(() => {
+      window.open('https://instagram.com/direct/inbox/', '_blank');
+    }, 400);
   };
 
-  // 3. Facebook / Messenger Action
   const handleSendFacebook = () => {
-    triggerHaptic('light');
-    const msg = generatedMessage.trim();
-    if (!msg) return;
-    copyWishToClipboard(msg);
-    showToast('Wish copied! Opening Facebook... 🔵');
-    const encoded = encodeURIComponent(msg);
-    window.open(`https://www.facebook.com/sharer/sharer.php?quote=${encoded}`, '_blank', 'noopener,noreferrer');
+    navigator.clipboard.writeText(generatedMessage);
+    showToast('Wish copied! Paste into Messenger or Facebook timeline 💬');
+    setTimeout(() => {
+      window.open('https://www.messenger.com/', '_blank');
+    }, 400);
   };
 
-  // 4. Snapchat Action
   const handleSendSnapchat = () => {
-    triggerHaptic('light');
-    const msg = generatedMessage.trim();
-    if (!msg) return;
-    copyWishToClipboard(msg);
-    showToast('Wish copied! Opening Snapchat... 👻');
-    const encoded = encodeURIComponent(msg);
-    window.open(`https://www.snapchat.com/share?text=${encoded}`, '_blank', 'noopener,noreferrer');
+    navigator.clipboard.writeText(generatedMessage);
+    showToast('Wish copied! Paste into Snapchat Chat or Snap 👻');
+    setTimeout(() => {
+      window.open('https://web.snapchat.com/', '_blank');
+    }, 400);
   };
 
-  // 5. Copy Action
+  // Secondary Utility Action Handlers
   const handleCopy = async () => {
-    triggerHaptic('medium');
-    const msg = generatedMessage.trim();
-    if (!msg) return;
     try {
-      await navigator.clipboard.writeText(msg);
+      await navigator.clipboard.writeText(generatedMessage);
       setCopied(true);
-      showToast('Copied to clipboard! 📋🎉');
+      showToast('Wish copied to clipboard! 📋');
       setTimeout(() => setCopied(false), 2500);
     } catch {
-      showToast('Failed to copy to clipboard.');
+      showToast('Unable to copy automatically. Please select text manually.');
     }
   };
 
-  // 6. Web Share API Action (Mobile Native Sheet)
   const handleShare = async () => {
-    triggerHaptic('light');
-    const msg = generatedMessage.trim();
-    if (!msg) return;
     if (navigator.share) {
       try {
         await navigator.share({
-          title: `Happy Birthday ${currentPerson.name}!`,
-          text: msg,
+          title: `Birthday wish for ${currentPerson.name}`,
+          text: generatedMessage,
         });
-        showToast('Shared successfully! 📤');
-      } catch (err: any) {
-        if (err.name !== 'AbortError') {
-          handleCopy();
-        }
+      } catch (err) {
+        // User cancelled share
       }
     } else {
       handleCopy();
     }
   };
 
-  // 7. SMS Handoff Action
   const handleSendSMS = () => {
-    triggerHaptic('light');
-    const msg = generatedMessage.trim();
-    if (!msg) return;
-    const encoded = encodeURIComponent(msg);
-    window.location.href = `sms:?body=${encoded}`;
+    const text = encodeURIComponent(generatedMessage);
+    window.open(`sms:?body=${text}`, '_self');
   };
 
-  // 8. Celebration Action
-  const handleCelebrate = () => {
-    triggerCelebration();
-    showToast(`Happy Birthday ${currentPerson.name}! 🥳🎉`);
-    const studio = document.getElementById('wish-studio');
-    if (studio) {
-      studio.scrollIntoView({ behavior: 'smooth', block: 'center' });
-    }
-  };
-
-  // Open Edit Modal with History
+  // Edit Handlers with History Integration
   const handleOpenEdit = () => {
-    triggerHaptic('light');
     pushNav('edit', currentPerson.id);
     setIsEditModalOpen(true);
   };
 
-  // Close Edit Modal with History Sync
   const handleCloseEdit = () => {
     setIsEditModalOpen(false);
     popNav();
   };
 
-  // Save Edit Handler
   const handleSaveEdit = async (id: number, data: Partial<PersonInput>) => {
-    triggerHaptic('success');
     const updated = await onUpdate(id, data);
     setCurrentPerson(updated);
-    setIsEditModalOpen(false);
-    popNav();
-    showToast(`Updated details for ${updated.name}! ✨`);
+    showToast('Updated details successfully!');
   };
 
-  // Open Delete Dialog with History
+  // Delete Handlers with History Integration
   const handleOpenDelete = () => {
-    triggerHaptic('medium');
     pushNav('delete', currentPerson.id);
     setIsDeleteDialogOpen(true);
   };
 
-  // Close Delete Dialog with History Sync
   const handleCloseDelete = () => {
     setIsDeleteDialogOpen(false);
     popNav();
   };
 
-  // Confirm Delete Handler
   const handleConfirmDelete = async () => {
-    triggerHaptic('medium');
     try {
       setIsDeleting(true);
       await onDelete(currentPerson.id);
-      setIsDeleteDialogOpen(false);
-      onBack(); // Return to dashboard
-    } catch {
-      showToast('Failed to remove person.');
+    } finally {
       setIsDeleting(false);
+      setIsDeleteDialogOpen(false);
     }
   };
 
   return (
-    <div className="w-full max-w-4xl mx-auto space-y-6 animate-in fade-in slide-in-from-bottom-2 duration-300">
-      {/* Toast Feedback */}
+    <div className="space-y-6 animate-in fade-in duration-300">
+      {/* Toast Feedback Notification */}
       {toastFeedback && (
         <div className="fixed top-5 left-1/2 -translate-x-1/2 z-50 animate-in fade-in slide-in-from-top-4 duration-300">
-          <div className="flex items-center gap-2 px-5 py-3 rounded-full bg-slate-900 text-white text-xs sm:text-sm font-bold shadow-2xl border border-slate-700">
-            <Sparkles className="w-4 h-4 text-purple-400" />
+          <div className="flex items-center gap-2.5 px-5 py-3 rounded-full bg-slate-900 text-white text-xs sm:text-sm font-bold shadow-2xl border border-slate-700">
             <span>{toastFeedback}</span>
           </div>
         </div>
       )}
 
-      {/* CLEAR, HIGH-CONTRAST TOP APP BAR / BACK NAVIGATION */}
-      <div className="sticky top-14 sm:top-16 z-20 w-full py-2.5 bg-[#FAF8F5]/95 backdrop-blur-md border-b border-slate-200/80 flex items-center justify-between gap-3 shadow-xs transition-all mb-2">
-        {/* Android-style clean, distinct Back Navigation */}
+      {/* STICKY TOP NAVIGATION / ACTION BAR */}
+      <div className="sticky top-14 sm:top-16 z-20 w-full py-2.5 bg-[#FAF8F5]/95 backdrop-blur-md border-b border-warm-200/70 flex items-center justify-between gap-3 shadow-xs transition-all mb-2">
         <button
           type="button"
-          onClick={() => {
-            triggerHaptic('light');
-            onBack();
-          }}
-          className="inline-flex items-center gap-2.5 py-1 px-1 -ml-1 text-slate-800 hover:text-purple-700 font-bold text-sm sm:text-base group active:scale-95 transition-all focus:outline-none"
-          aria-label="Back to Birthdays"
+          onClick={onBack}
+          className="inline-flex items-center gap-2 px-4 py-2 rounded-2xl bg-white hover:bg-warm-100 text-slate-800 hover:text-purple-700 border border-warm-300 text-xs sm:text-sm font-extrabold shadow-sm transition-all active:scale-95 group"
         >
-          <div className="w-8 h-8 rounded-full bg-white border border-slate-200/90 shadow-xs flex items-center justify-center text-slate-700 group-hover:bg-purple-50 group-hover:text-purple-700 group-hover:border-purple-200 transition-colors">
-            <ArrowLeft className="w-4 h-4 text-slate-700 group-hover:text-purple-700 group-hover:-translate-x-0.5 transition-transform" />
-          </div>
-          <span className="tracking-tight font-extrabold">Back to Birthdays</span>
+          <ArrowLeft className="w-4 h-4 text-slate-700 group-hover:text-purple-700 group-hover:-translate-x-0.5 transition-transform" />
+          <span>← Back to Birthdays</span>
         </button>
 
         {/* Action icons: Edit & Delete */}
@@ -309,7 +238,7 @@ export const BirthdayDetailPage: React.FC<BirthdayDetailPageProps> = ({
           <button
             type="button"
             onClick={handleOpenEdit}
-            className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-white hover:bg-purple-50 text-slate-700 hover:text-purple-700 border border-slate-200/90 hover:border-purple-200 text-xs font-bold transition-all shadow-xs active:scale-95"
+            className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-2xl bg-white hover:bg-purple-50 text-slate-700 hover:text-purple-700 border border-warm-200/90 hover:border-purple-200 text-xs font-bold transition-all shadow-sm active:scale-95"
             title="Edit Person"
           >
             <Edit3 className="w-3.5 h-3.5 text-purple-600" />
@@ -320,7 +249,7 @@ export const BirthdayDetailPage: React.FC<BirthdayDetailPageProps> = ({
           <button
             type="button"
             onClick={handleOpenDelete}
-            className="w-8 h-8 rounded-xl bg-white hover:bg-rose-50 text-slate-500 hover:text-rose-600 border border-slate-200/90 hover:border-rose-200 flex items-center justify-center transition-colors shadow-xs active:scale-95"
+            className="w-9 h-9 rounded-2xl bg-white hover:bg-rose-50 text-slate-400 hover:text-rose-600 border border-warm-200/90 hover:border-rose-200 flex items-center justify-center transition-colors shadow-sm active:scale-95"
             title="Delete Person"
             aria-label="Delete Person"
           >
@@ -329,148 +258,129 @@ export const BirthdayDetailPage: React.FC<BirthdayDetailPageProps> = ({
         </div>
       </div>
 
-      {/* HERO / PERSON HEADER CARD */}
-      <div className={`relative overflow-hidden rounded-3xl border transition-all duration-300 p-6 sm:p-8 shadow-card ${
-        isToday 
-          ? 'bg-gradient-to-r from-amber-500/15 via-pink-500/10 to-purple-600/15 border-amber-300/80 shadow-glow-festive' 
-          : 'bg-white border-warm-200/90'
-      }`}>
+      {/* SPOTLIGHT HERO CARD */}
+      <div className="relative overflow-hidden rounded-3xl bg-gradient-to-br from-purple-900 via-purple-950 to-slate-900 text-white p-6 sm:p-10 shadow-soft-hover border border-purple-700/40">
+        <div className="absolute top-0 right-0 w-80 h-80 bg-pink-500/20 rounded-full blur-3xl pointer-events-none"></div>
+        <div className="absolute bottom-0 left-1/3 w-72 h-72 bg-amber-500/15 rounded-full blur-3xl pointer-events-none"></div>
+
         <div className="relative z-10 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-6">
-          <div className="flex items-center gap-4 sm:gap-6">
-            {/* Avatar Badge */}
-            <div className={`w-16 h-16 sm:w-20 sm:h-20 rounded-2xl flex items-center justify-center text-white font-black text-2xl sm:text-3xl shadow-sm flex-shrink-0 ${
-              isToday
-                ? 'bg-gradient-to-tr from-amber-500 via-pink-500 to-rose-500 ring-4 ring-amber-300/60'
-                : 'bg-gradient-to-tr from-purple-600 via-indigo-600 to-pink-500'
-            }`}>
-              {isToday ? '🎂' : firstLetter}
+          <div className="flex items-center gap-5">
+            <div className="relative">
+              <div className="w-20 h-20 sm:w-24 sm:h-24 rounded-3xl bg-gradient-to-tr from-amber-400 via-pink-500 to-purple-600 flex items-center justify-center text-white font-black text-3xl sm:text-4xl shadow-glow-festive border-2 border-white/30">
+                {firstLetter}
+              </div>
+              {isToday && (
+                <span className="absolute -top-2 -right-2 text-2xl animate-bounce">
+                  👑
+                </span>
+              )}
             </div>
 
-            {/* Name & Basic Info */}
-            <div className="space-y-1">
-              <div className="flex items-center gap-2.5 flex-wrap">
-                <h1 className="text-2xl sm:text-3xl font-black text-slate-900 tracking-tight">
-                  {currentPerson.name}
-                </h1>
-                <span className="px-2.5 py-0.5 rounded-full text-xs font-semibold bg-slate-100 text-slate-700 border border-slate-200">
+            <div>
+              <div className="flex flex-wrap items-center gap-2 mb-1">
+                <span className="px-2.5 py-0.5 rounded-full text-xs font-semibold bg-purple-800/80 text-purple-200 border border-purple-700/50">
                   {currentPerson.relationship}
                 </span>
                 {zodiac && (
-                  <span className="text-xs text-slate-400 font-medium">
-                    ({zodiac})
+                  <span className="px-2.5 py-0.5 rounded-full text-xs font-semibold bg-white/10 text-pink-200 border border-white/15">
+                    {zodiac}
                   </span>
                 )}
               </div>
 
-              {/* Birthday Date & Age/Countdown */}
-              <div className="flex flex-wrap items-center gap-2.5 text-xs sm:text-sm text-slate-600 font-medium pt-0.5">
+              <h1 className="text-2xl sm:text-4xl font-black tracking-tight text-white flex items-center gap-2">
+                <span>{currentPerson.name}</span>
+                {isToday && <span>🎉</span>}
+              </h1>
+
+              <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-xs sm:text-sm text-purple-200/90 mt-1.5 font-medium">
                 <span className="flex items-center gap-1.5">
-                  <Calendar className="w-4 h-4 text-purple-600" />
-                  <span>{formatBirthdayDate(currentPerson.birthday)}</span>
+                  <Calendar className="w-4 h-4 text-pink-400" />
+                  {formatBirthdayDate(currentPerson.birthday)}
                 </span>
-                <span>•</span>
-                <span className="flex items-center gap-1.5 font-bold text-slate-800">
-                  {isToday ? (
-                    <span className="text-purple-700">
-                      {age_turning ? `🎂 Turning ${age_turning} today!` : `🎂 Birthday is today!`}
-                    </span>
-                  ) : isTomorrow ? (
-                    <span className="text-rose-600">
-                      {age_turning ? `🎁 Turning ${age_turning} tomorrow!` : `🎁 Birthday is tomorrow!`}
-                    </span>
-                  ) : (
-                    <span>
-                      {age_turning ? `Turning ${age_turning} in ${daysRemaining} days` : `In ${daysRemaining} days`}
-                    </span>
-                  )}
-                </span>
+                {age_turning ? (
+                  <>
+                    <span>•</span>
+                    <span>Turning <strong className="text-amber-300 font-bold">{age_turning}</strong></span>
+                  </>
+                ) : null}
               </div>
             </div>
           </div>
 
-          {/* Right Badge & Unified Celebrate Action */}
-          <div className="flex flex-col sm:items-end gap-2 w-full sm:w-auto">
-            <span className={`inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-2xl text-xs sm:text-sm font-extrabold shadow-xs ${badge.className}`}>
-              {badge.text}
-            </span>
+          {/* Countdown badge / Big Callout & Celebrate button */}
+          <div className="flex sm:flex-col items-center sm:items-end justify-between w-full sm:w-auto gap-3 pt-3 sm:pt-0 border-t border-purple-800/60 sm:border-none">
+            <div className="text-left sm:text-right">
+              {isToday ? (
+                <span className="text-2xl sm:text-3xl font-black text-transparent bg-clip-text bg-gradient-to-r from-amber-300 via-pink-400 to-rose-400 animate-pulse">
+                  TODAY! 🎉
+                </span>
+              ) : isTomorrow ? (
+                <span className="text-2xl sm:text-3xl font-black text-amber-300">
+                  TOMORROW!
+                </span>
+              ) : (
+                <div className="flex items-baseline gap-1.5">
+                  <span className="text-3xl sm:text-4xl font-black text-white">{daysRemaining}</span>
+                  <span className="text-sm font-bold text-amber-300 uppercase">Days Left</span>
+                </div>
+              )}
+            </div>
 
-            {/* CELEBRATE BUTTON - Shown on Today's Birthday */}
-            {isToday && (
-              <button
-                type="button"
-                onClick={handleCelebrate}
-                className="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-2xl bg-gradient-to-r from-amber-400 via-rose-500 to-purple-600 hover:from-amber-500 hover:to-purple-700 text-white font-black text-xs sm:text-sm shadow-md hover:shadow-lg transform active:scale-95 transition-all"
-                title="Celebrate Birthday!"
-              >
-                <PartyPopper className="w-4 h-4" />
-                <span>🎉 Celebrate!</span>
-              </button>
-            )}
+            <button
+              type="button"
+              onClick={() => triggerCelebration()}
+              className="px-4 py-2 rounded-2xl bg-amber-400 hover:bg-amber-300 text-slate-900 font-extrabold text-xs shadow-md transition-all active:scale-95 flex items-center gap-1.5"
+            >
+              <PartyPopper className="w-4 h-4" />
+              <span>Celebrate!</span>
+            </button>
           </div>
         </div>
 
-        {/* Optional Notes & Reminders */}
-        {(currentPerson.notes || currentPerson.reminder_days) && (
-          <div className="mt-5 pt-4 border-t border-slate-200/80 grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs">
-            {currentPerson.notes && (
-              <div className="bg-slate-50 p-3 rounded-2xl border border-slate-200/70">
-                <span className="font-bold text-slate-700 uppercase tracking-wider block mb-1 text-[10px]">
-                  💡 Notes & Ideas:
-                </span>
-                <p className="text-slate-600 italic">"{currentPerson.notes}"</p>
-              </div>
-            )}
-            {currentPerson.reminder_days && (
-              <div className="bg-slate-50 p-3 rounded-2xl border border-slate-200/70">
-                <span className="font-bold text-slate-700 uppercase tracking-wider block mb-1 text-[10px]">
-                  🔔 Active Reminders:
-                </span>
-                <div className="flex items-center gap-2 text-slate-600 font-medium">
-                  <Clock className="w-3.5 h-3.5 text-purple-600 flex-shrink-0" />
-                  <span className="capitalize">
-                    {currentPerson.reminder_days.replace(/_/g, ' ').replace(/,/g, ', ')} (at {currentPerson.reminder_time || '09:00'})
-                  </span>
-                </div>
-              </div>
-            )}
+        {/* Notes callout if available */}
+        {currentPerson.notes && (
+          <div className="relative z-10 mt-6 pt-4 border-t border-purple-800/60 text-xs sm:text-sm text-purple-200/90 italic">
+            "{currentPerson.notes}"
           </div>
         )}
       </div>
 
-      {/* WISH PREPARATION STUDIO */}
-      <section id="wish-studio" className="bg-white rounded-3xl border border-warm-200/90 p-6 sm:p-8 shadow-card space-y-6">
-        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+      {/* WISH STUDIO SECTION */}
+      <section className="bg-white rounded-3xl p-5 sm:p-8 border border-warm-200/90 shadow-soft space-y-6">
+        {/* Studio Title */}
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-4 border-b border-warm-200/70">
           <div>
-            <div className="flex items-center gap-2 text-xs font-black uppercase tracking-wider text-purple-600 mb-1">
-              <MessageSquare className="w-4 h-4" />
-              <span>Wish Studio</span>
+            <div className="flex items-center gap-2">
+              <span className="p-1.5 rounded-xl bg-purple-100 text-purple-700">
+                <Sparkles className="w-4 h-4" />
+              </span>
+              <h2 className="text-lg sm:text-xl font-extrabold text-slate-800 tracking-tight">
+                Birthday Wish Studio
+              </h2>
             </div>
-            <h2 className="text-xl sm:text-2xl font-black text-slate-900 tracking-tight">
-              Prepare a Birthday Message ✍️
-            </h2>
-            <p className="text-xs text-slate-500 font-medium">
-              Pick a suggestion or write your own custom message for {currentPerson.name}
+            <p className="text-xs text-slate-500 font-medium mt-0.5">
+              Pick a style or customize your message below before sending.
             </p>
           </div>
 
-          {/* Shuffle / Regenerate Button */}
           <button
             type="button"
             onClick={handleRegenerate}
-            className="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 hover:text-slate-900 font-bold text-xs shadow-xs transition-all active:scale-95"
-            title="Try another variation"
+            className="self-start sm:self-center inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-warm-100 hover:bg-warm-200/80 text-slate-700 text-xs font-bold transition-colors active:scale-95"
+            title="Generate another variation"
           >
-            <RefreshCw className={`w-3.5 h-3.5 text-purple-600 ${isRotating ? 'animate-spin' : ''}`} />
+            <RotateCw className={`w-3.5 h-3.5 text-purple-600 ${isRotating ? 'animate-spin' : ''}`} />
             <span>Shuffle Idea</span>
           </button>
         </div>
 
-        {/* Style Selector Chips */}
+        {/* Style Selection Pills */}
         <div>
           <label className="text-xs font-bold text-slate-700 uppercase tracking-wider block mb-2.5">
-            Choose Tone:
+            Choose Tone & Vibe
           </label>
-          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-2.5">
+          <div className="grid grid-cols-2 sm:grid-cols-5 gap-2 sm:gap-2.5">
             {MESSAGE_STYLES.map((style) => {
               const isSelected = selectedStyle === style.id;
               return (
@@ -478,45 +388,37 @@ export const BirthdayDetailPage: React.FC<BirthdayDetailPageProps> = ({
                   type="button"
                   key={style.id}
                   onClick={() => handleSelectStyle(style.id)}
-                  className={`p-3 rounded-2xl border text-left transition-all duration-200 flex flex-col justify-between gap-1.5 ${
+                  className={`p-3 rounded-2xl border text-left transition-all active:scale-95 ${
                     isSelected
-                      ? 'bg-purple-600 text-white border-purple-600 shadow-sm scale-[1.02]'
-                      : 'bg-slate-50 hover:bg-slate-100 text-slate-700 border-slate-200'
+                      ? 'bg-gradient-to-br from-purple-50 to-pink-50 border-purple-400 shadow-sm ring-2 ring-purple-400/30'
+                      : 'bg-[#FAF8F5] border-warm-200/80 hover:bg-warm-100/60'
                   }`}
                 >
-                  <span className="text-lg">{style.emoji}</span>
-                  <div>
-                    <div className="text-xs font-extrabold">{style.label}</div>
-                    <div className={`text-[10px] leading-tight ${isSelected ? 'text-purple-100' : 'text-slate-400'}`}>
-                      {style.desc}
-                    </div>
+                  <div className="flex items-center gap-1.5 font-extrabold text-xs sm:text-sm text-slate-800">
+                    <span>{style.emoji}</span>
+                    <span>{style.label}</span>
                   </div>
+                  <p className="text-[10px] text-slate-500 mt-1 leading-tight line-clamp-1">
+                    {style.desc}
+                  </p>
                 </button>
               );
             })}
           </div>
         </div>
 
-        {/* Interactive Editable Message Textarea Box */}
-        <div className="space-y-2">
-          <div className="flex items-center justify-between">
-            <label htmlFor="custom-birthday-message" className="text-xs font-bold text-slate-700 uppercase tracking-wider flex items-center gap-1.5">
-              <Edit3 className="w-3.5 h-3.5 text-purple-600" />
-              <span>Personalize Message (Editable)</span>
-            </label>
-            <span className="text-[11px] text-slate-400 font-medium">
-              {generatedMessage.length} characters
-            </span>
-          </div>
-
+        {/* Editable Message Box */}
+        <div className="space-y-1.5">
+          <label className="text-xs font-bold text-slate-700 uppercase tracking-wider block">
+            Custom Message (Editable)
+          </label>
           <div className="relative">
             <textarea
-              id="custom-birthday-message"
               rows={4}
               value={generatedMessage}
               onChange={(e) => setGeneratedMessage(e.target.value)}
               placeholder="Write your custom birthday wish here..."
-              className="w-full p-4 sm:p-5 rounded-2xl bg-slate-50 border border-slate-200 text-slate-800 text-sm sm:text-base font-medium leading-relaxed shadow-inner focus:outline-none focus:ring-2 focus:ring-purple-500 focus:bg-white transition-all resize-y min-h-[110px]"
+              className="w-full p-4 sm:p-5 rounded-2xl bg-warm-50/90 border border-warm-200 text-slate-800 text-sm sm:text-base font-medium leading-relaxed shadow-inner focus:outline-none focus:ring-2 focus:ring-purple-500 focus:bg-white transition-all resize-y min-h-[110px]"
             />
           </div>
           <p className="text-[11px] text-slate-500 flex items-center gap-1 italic">
@@ -537,7 +439,7 @@ export const BirthdayDetailPage: React.FC<BirthdayDetailPageProps> = ({
               <button
                 type="button"
                 onClick={handleSendWhatsApp}
-                className="flex items-center justify-center gap-2 py-3 px-3 rounded-2xl bg-[#25D366] hover:bg-[#20BD5A] text-white font-extrabold text-xs sm:text-sm shadow-xs hover:shadow-sm transform active:scale-95 transition-all"
+                className="flex items-center justify-center gap-2 py-3.5 px-3 rounded-2xl bg-[#25D366] hover:bg-[#20BD5A] text-white font-extrabold text-xs sm:text-sm shadow-soft hover:shadow-soft-hover transform active:scale-95 transition-all"
                 title="Send via WhatsApp"
               >
                 <WhatsAppIcon className="w-4 h-4" />
@@ -548,7 +450,7 @@ export const BirthdayDetailPage: React.FC<BirthdayDetailPageProps> = ({
               <button
                 type="button"
                 onClick={handleSendInstagram}
-                className="flex items-center justify-center gap-2 py-3 px-3 rounded-2xl bg-gradient-to-r from-[#833ab4] via-[#fd1d1d] to-[#fcb045] hover:opacity-95 text-white font-extrabold text-xs sm:text-sm shadow-xs hover:shadow-sm transform active:scale-95 transition-all"
+                className="flex items-center justify-center gap-2 py-3.5 px-3 rounded-2xl bg-gradient-to-r from-[#833ab4] via-[#fd1d1d] to-[#fcb045] hover:opacity-95 text-white font-extrabold text-xs sm:text-sm shadow-soft hover:shadow-soft-hover transform active:scale-95 transition-all"
                 title="Send via Instagram Direct"
               >
                 <InstagramIcon className="w-4 h-4" />
@@ -559,7 +461,7 @@ export const BirthdayDetailPage: React.FC<BirthdayDetailPageProps> = ({
               <button
                 type="button"
                 onClick={handleSendFacebook}
-                className="flex items-center justify-center gap-2 py-3 px-3 rounded-2xl bg-[#1877F2] hover:bg-[#166FE5] text-white font-extrabold text-xs sm:text-sm shadow-xs hover:shadow-sm transform active:scale-95 transition-all"
+                className="flex items-center justify-center gap-2 py-3.5 px-3 rounded-2xl bg-[#1877F2] hover:bg-[#166FE5] text-white font-extrabold text-xs sm:text-sm shadow-soft hover:shadow-soft-hover transform active:scale-95 transition-all"
                 title="Send via Facebook"
               >
                 <FacebookIcon className="w-4 h-4" />
@@ -570,7 +472,7 @@ export const BirthdayDetailPage: React.FC<BirthdayDetailPageProps> = ({
               <button
                 type="button"
                 onClick={handleSendSnapchat}
-                className="flex items-center justify-center gap-2 py-3 px-3 rounded-2xl bg-[#FFFC00] hover:bg-[#F2EE00] text-slate-950 font-black text-xs sm:text-sm shadow-xs hover:shadow-sm transform active:scale-95 transition-all border border-amber-300"
+                className="flex items-center justify-center gap-2 py-3.5 px-3 rounded-2xl bg-[#FFFC00] hover:bg-[#F2EE00] text-slate-950 font-black text-xs sm:text-sm shadow-soft hover:shadow-soft-hover transform active:scale-95 transition-all border border-amber-300/80"
                 title="Send via Snapchat"
               >
                 <SnapchatIcon className="w-4 h-4" />
@@ -585,10 +487,10 @@ export const BirthdayDetailPage: React.FC<BirthdayDetailPageProps> = ({
             <button
               type="button"
               onClick={handleCopy}
-              className={`flex items-center justify-center gap-2 py-2.5 px-4 rounded-xl font-extrabold text-xs sm:text-sm border transition-all active:scale-95 shadow-xs ${
+              className={`flex items-center justify-center gap-2 py-3 px-4 rounded-2xl font-extrabold text-xs sm:text-sm border transition-all active:scale-95 shadow-sm ${
                 copied
                   ? 'bg-emerald-600 text-white border-emerald-600'
-                  : 'bg-white hover:bg-slate-50 text-slate-800 border-slate-200'
+                  : 'bg-white hover:bg-warm-50 text-slate-800 border-warm-300'
               }`}
             >
               {copied ? (
@@ -608,7 +510,7 @@ export const BirthdayDetailPage: React.FC<BirthdayDetailPageProps> = ({
             <button
               type="button"
               onClick={handleShare}
-              className="flex items-center justify-center gap-2 py-2.5 px-4 rounded-xl font-extrabold text-xs sm:text-sm bg-white hover:bg-slate-50 text-slate-800 border border-slate-200 transition-all active:scale-95 shadow-xs"
+              className="flex items-center justify-center gap-2 py-3 px-4 rounded-2xl font-extrabold text-xs sm:text-sm bg-white hover:bg-warm-50 text-slate-800 border border-warm-300 transition-all active:scale-95 shadow-sm"
             >
               <Share2 className="w-4 h-4 text-blue-600" />
               <span>Share...</span>
@@ -618,7 +520,7 @@ export const BirthdayDetailPage: React.FC<BirthdayDetailPageProps> = ({
             <button
               type="button"
               onClick={handleSendSMS}
-              className="flex items-center justify-center gap-2 py-2.5 px-4 rounded-xl font-extrabold text-xs sm:text-sm bg-white hover:bg-slate-50 text-slate-800 border border-slate-200 transition-all active:scale-95 shadow-xs"
+              className="flex items-center justify-center gap-2 py-3 px-4 rounded-2xl font-extrabold text-xs sm:text-sm bg-white hover:bg-warm-50 text-slate-800 border border-warm-300 transition-all active:scale-95 shadow-sm"
             >
               <Send className="w-4 h-4 text-amber-600" />
               <span>Send via SMS 💬</span>
@@ -631,11 +533,8 @@ export const BirthdayDetailPage: React.FC<BirthdayDetailPageProps> = ({
       <div className="pt-2 pb-6 flex items-center justify-center">
         <button
           type="button"
-          onClick={() => {
-            triggerHaptic('light');
-            onBack();
-          }}
-          className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-white hover:bg-slate-50 text-slate-700 hover:text-slate-900 border border-slate-200 text-xs sm:text-sm font-bold shadow-xs transition-all active:scale-95 group"
+          onClick={onBack}
+          className="inline-flex items-center gap-2 px-6 py-3 rounded-2xl bg-white hover:bg-warm-100 text-slate-700 hover:text-slate-900 border border-warm-200/90 text-xs sm:text-sm font-bold shadow-sm transition-all active:scale-95 group"
         >
           <ArrowLeft className="w-4 h-4 text-slate-500 group-hover:-translate-x-0.5 transition-transform" />
           <span>Back to All Birthdays</span>

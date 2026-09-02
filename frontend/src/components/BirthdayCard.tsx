@@ -1,8 +1,7 @@
 import React from 'react';
-import { Calendar, ChevronRight } from 'lucide-react';
+import { Calendar, User, ChevronRight, Sparkles, Trash2, Heart, Gift } from 'lucide-react';
 import { Person } from '../types';
 import { formatBirthdayDate, getCountdownBadge, getZodiacSign } from '../utils/dateUtils';
-import { triggerHaptic } from '../utils/hapticsService';
 
 interface BirthdayCardProps {
   person: Person;
@@ -13,6 +12,7 @@ interface BirthdayCardProps {
 export const BirthdayCard: React.FC<BirthdayCardProps> = ({
   person,
   onViewBirthday,
+  onDelete,
 }) => {
   const daysRemaining = person.days_remaining ?? person.days_until ?? 0;
   const badge = getCountdownBadge(daysRemaining);
@@ -37,43 +37,38 @@ export const BirthdayCard: React.FC<BirthdayCardProps> = ({
     return 'bg-purple-50 text-purple-700 border-purple-200';
   };
 
-  const handleClick = () => {
-    triggerHaptic('light');
-    onViewBirthday(person);
-  };
-
   return (
     <div
-      onClick={handleClick}
-      className="group relative bg-white rounded-2xl p-5 border border-slate-200/80 shadow-xs hover:shadow-md transition-all duration-200 flex flex-col justify-between hover:-translate-y-0.5 cursor-pointer active:scale-[0.99]"
+      onClick={() => onViewBirthday(person)}
+      className="group relative bg-white rounded-2xl p-5 border border-warm-200/80 shadow-soft hover:shadow-soft-hover transition-all duration-300 flex flex-col justify-between hover:-translate-y-1 cursor-pointer"
     >
       <div>
         {/* Top Row: Avatar, Name & Countdown Badge */}
-        <div className="flex items-start justify-between gap-3 mb-3">
+        <div className="flex items-start justify-between gap-3 mb-3.5">
           <div className="flex items-center gap-3">
-            <div className={`w-11 h-11 rounded-2xl bg-gradient-to-tr ${getAvatarGradient(person.relationship)} flex items-center justify-center font-black text-base shadow-xs group-hover:scale-105 transition-transform duration-200 flex-shrink-0`}>
+            <div className={`w-12 h-12 rounded-2xl bg-gradient-to-tr ${getAvatarGradient(person.relationship)} flex items-center justify-center font-black text-lg shadow-sm group-hover:scale-105 transition-transform duration-200`}>
               {firstLetter}
             </div>
             <div>
-              <h3 className="font-extrabold text-slate-800 text-base leading-tight group-hover:text-purple-700 transition-colors">
+              <h3 className="font-bold text-slate-800 text-base leading-tight group-hover:text-purple-700 transition-colors">
                 {person.name}
               </h3>
-              <span className={`inline-block text-[10px] px-2 py-0.5 mt-1 rounded-full font-semibold border ${getRelationshipBadgeStyle(person.relationship)}`}>
+              <span className={`inline-block text-[11px] px-2 py-0.5 mt-1 rounded-full font-semibold border ${getRelationshipBadgeStyle(person.relationship)}`}>
                 {person.relationship}
               </span>
             </div>
           </div>
 
           {/* Countdown badge */}
-          <span className={`text-xs px-2.5 py-0.5 rounded-full font-bold whitespace-nowrap ${badge.className}`}>
+          <span className={`text-xs px-2.5 py-1 rounded-full font-bold whitespace-nowrap ${badge.className}`}>
             {badge.text}
           </span>
         </div>
 
         {/* Middle: Birthday Date & Details */}
-        <div className="bg-slate-50 rounded-xl p-2.5 text-xs text-slate-600 flex items-center justify-between border border-slate-100 mb-2.5">
-          <div className="flex items-center gap-1.5">
-            <Calendar className="w-3.5 h-3.5 text-purple-600" />
+        <div className="bg-[#FAF8F5] rounded-xl p-3 text-xs text-slate-600 flex items-center justify-between border border-warm-100/90 mb-3">
+          <div className="flex items-center gap-2">
+            <Calendar className="w-3.5 h-3.5 text-purple-500" />
             <span className="font-semibold text-slate-700">{formatBirthdayDate(person.birthday)}</span>
             {zodiac && <span className="text-slate-400">({zodiac})</span>}
           </div>
@@ -87,16 +82,16 @@ export const BirthdayCard: React.FC<BirthdayCardProps> = ({
 
         {/* Optional Notes snippet */}
         {person.notes && (
-          <p className="text-xs text-slate-500 italic bg-purple-50/40 px-2.5 py-1.5 rounded-lg border border-purple-100/50 line-clamp-1 mb-2">
+          <p className="text-xs text-slate-500 italic bg-purple-50/40 px-2.5 py-2 rounded-lg border border-purple-100/50 line-clamp-1 mb-2">
             "{person.notes}"
           </p>
         )}
       </div>
 
       {/* Footer / Action row */}
-      <div className="pt-2.5 border-t border-slate-100 flex items-center justify-between text-xs text-purple-700 font-bold group-hover:text-purple-900 transition-colors">
+      <div className="pt-3 border-t border-slate-100 flex items-center justify-between text-xs text-purple-700 font-semibold group-hover:text-purple-900 transition-colors">
         <span>View Details</span>
-        <ChevronRight className="w-4 h-4 transform group-hover:translate-x-0.5 transition-transform" />
+        <ChevronRight className="w-4 h-4 transform group-hover:translate-x-1 transition-transform" />
       </div>
     </div>
   );

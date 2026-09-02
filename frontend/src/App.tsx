@@ -15,8 +15,6 @@ import { ErrorState } from './components/ErrorState';
 import { BottomNav } from './components/BottomNav';
 import { checkAndSendBirthdayReminders } from './utils/notificationService';
 import { initHistoryState, pushNav, popNav, AppNavState } from './utils/navigation';
-import { triggerHaptic } from './utils/hapticsService';
-import { triggerCelebration } from './utils/celebrationService';
 
 export function App() {
   const [people, setPeople] = useState<Person[]>([]);
@@ -101,9 +99,8 @@ export function App() {
     }, 3000);
   };
 
-  // Modal Open Handlers with History integration & Haptics
+  // Modal Open Handlers with History integration
   const handleOpenAddModal = () => {
-    triggerHaptic('light');
     pushNav('add');
     setIsAddModalOpen(true);
   };
@@ -114,7 +111,6 @@ export function App() {
   };
 
   const handleOpenSettings = () => {
-    triggerHaptic('light');
     pushNav('settings');
     setIsSettingsOpen(true);
   };
@@ -126,41 +122,14 @@ export function App() {
 
   // Detail View Handlers with History
   const handleOpenDetail = (person: Person) => {
-    triggerHaptic('light');
     pushNav('detail', person.id);
     setSelectedDetailPerson(person);
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
   const handleCloseDetail = () => {
-    triggerHaptic('light');
     setSelectedDetailPerson(null);
     popNav();
-  };
-
-  // Mobile Bottom Navigation Actions
-  const handleGoHome = () => {
-    if (selectedDetailPerson) {
-      setSelectedDetailPerson(null);
-    }
-    window.scrollTo({ top: 0, behavior: 'smooth' });
-  };
-
-  const handleGoBuddies = () => {
-    if (selectedDetailPerson) {
-      setSelectedDetailPerson(null);
-      setTimeout(() => {
-        const el = document.getElementById('buddies-list');
-        if (el) {
-          el.scrollIntoView({ behavior: 'smooth', block: 'start' });
-        }
-      }, 60);
-    } else {
-      const el = document.getElementById('buddies-list');
-      if (el) {
-        el.scrollIntoView({ behavior: 'smooth', block: 'start' });
-      }
-    }
   };
 
   // Data Handlers
@@ -334,9 +303,9 @@ export function App() {
                 <div className="space-y-10 mt-6 animate-in fade-in duration-300">
                   {/* 1. 🎂 TODAY SECTION (Highest Visual Emphasis) */}
                   {todayBirthdays.length > 0 && (
-                    <section className="bg-gradient-to-r from-amber-500/15 via-pink-500/10 to-purple-500/15 border-2 border-amber-400/50 rounded-3xl p-5 sm:p-7 shadow-glow-festive">
+                    <section className="bg-gradient-to-r from-amber-500/20 via-pink-500/15 to-purple-500/20 border-2 border-amber-400/80 rounded-3xl p-5 sm:p-7 shadow-glow-festive animate-pulse-subtle">
                       <div className="flex items-center gap-2 mb-4">
-                        <span className="p-1.5 rounded-xl bg-amber-500 text-white shadow-xs">
+                        <span className="p-1.5 rounded-xl bg-amber-500 text-white shadow-sm">
                           <PartyPopper className="w-5 h-5" />
                         </span>
                         <div>
@@ -346,8 +315,8 @@ export function App() {
                               {todayBirthdays.length}
                             </span>
                           </h2>
-                          <p className="text-xs text-slate-600 font-medium">
-                            It's their special day! Tap to send your birthday wish immediately.
+                          <p className="text-xs text-slate-600 font-semibold">
+                            It's their special day! Tap to prepare and send your birthday wish immediately.
                           </p>
                         </div>
                       </div>
@@ -358,14 +327,11 @@ export function App() {
                           return (
                             <div
                               key={person.id}
-                              onClick={() => {
-                                triggerCelebration();
-                                handleOpenDetail(person);
-                              }}
-                              className="bg-white rounded-2xl p-4 sm:p-5 border border-amber-300 shadow-sm hover:shadow-md transition-all duration-200 cursor-pointer flex items-center justify-between gap-4 group"
+                              onClick={() => handleOpenDetail(person)}
+                              className="bg-white rounded-2xl p-4 sm:p-5 border border-amber-300 shadow-md hover:shadow-lg transition-all duration-200 cursor-pointer flex items-center justify-between gap-4 group"
                             >
                               <div className="flex items-center gap-3.5">
-                                <div className="w-12 h-12 rounded-2xl bg-gradient-to-tr from-amber-500 via-pink-500 to-purple-600 text-white font-black text-xl flex items-center justify-center shadow-xs">
+                                <div className="w-13 h-13 rounded-2xl bg-gradient-to-tr from-amber-500 via-pink-500 to-purple-600 text-white font-black text-xl flex items-center justify-center shadow-sm">
                                   {firstLetter}
                                 </div>
                                 <div>
@@ -387,10 +353,9 @@ export function App() {
                                 type="button"
                                 onClick={(e) => {
                                   e.stopPropagation();
-                                  triggerCelebration();
                                   handleOpenDetail(person);
                                 }}
-                                className="px-4 py-2.5 rounded-xl bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 text-white text-xs font-extrabold shadow-xs flex items-center gap-1.5 flex-shrink-0 active:scale-95 transition-transform"
+                                className="px-4 py-2.5 rounded-xl bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 text-white text-xs font-extrabold shadow-sm flex items-center gap-1.5 flex-shrink-0 group-hover:scale-105 transition-transform"
                               >
                                 <span>Send Wish 🚀</span>
                               </button>
@@ -490,8 +455,6 @@ export function App() {
       {/* Mobile Bottom Navigation */}
       <BottomNav
         onOpenAddModal={handleOpenAddModal}
-        onGoHome={handleGoHome}
-        onGoBuddies={handleGoBuddies}
         totalCount={people.length}
       />
 
