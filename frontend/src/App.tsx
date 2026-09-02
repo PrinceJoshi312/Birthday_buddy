@@ -15,6 +15,8 @@ import { ErrorState } from './components/ErrorState';
 import { BottomNav } from './components/BottomNav';
 import { checkAndSendBirthdayReminders } from './utils/notificationService';
 import { initHistoryState, pushNav, popNav, AppNavState } from './utils/navigation';
+import { triggerHaptic } from './utils/hapticsService';
+import { triggerCelebration } from './utils/celebrationService';
 
 export function App() {
   const [people, setPeople] = useState<Person[]>([]);
@@ -52,64 +54,58 @@ export function App() {
     }
   };
 
+  // Initial load & History setup
   useEffect(() => {
-    initHistoryState();
     loadUpcomingBirthdays();
-  }, []);
+    initHistoryState();
 
-  // Centralized History popstate listener for Android Back & Browser navigation
-  useEffect(() => {
+    // Listen to Android & browser hardware back actions
     const handlePopState = (event: PopStateEvent) => {
-      const state = (event.state || { view: 'dashboard' }) as AppNavState;
+      const state = event.state as AppNavState | null;
 
-      if (state.view === 'dashboard') {
-        setSelectedDetailPerson(null);
+      if (!state || state.view === 'dashboard') {
         setIsAddModalOpen(false);
         setIsSettingsOpen(false);
+        setSelectedDetailPerson(null);
       } else if (state.view === 'detail') {
         setIsAddModalOpen(false);
         setIsSettingsOpen(false);
         if (state.personId) {
-          const found = people.find((p) => p.id === state.personId);
-          if (found) {
-            setSelectedDetailPerson(found);
+          const person = people.find((p) => p.id === state.personId);
+          if (person) {
+            setSelectedDetailPerson(person);
           }
         }
-      } else if (state.view === 'add') {
-        setIsAddModalOpen(true);
-        setIsSettingsOpen(false);
-        setSelectedDetailPerson(null);
-      } else if (state.view === 'settings' || state.view === 'import_confirm') {
-        setIsSettingsOpen(true);
-        setIsAddModalOpen(false);
       }
     };
 
     window.addEventListener('popstate', handlePopState);
     return () => window.removeEventListener('popstate', handlePopState);
+  }, []);
+
+  // Sync selected person if people list updates in background
+  useEffect(() => {
+    if (selectedDetailPerson) {
+      const fresh = people.find((p) => p.id === selectedDetailPerson.id);
+      if (fresh) {
+        setSelectedDetailPerson(fresh);
+      }
+    }
   }, [people]);
 
+  // Toast Feedback Helper
   const showToast = (message: string) => {
     setToastMessage(message);
     setTimeout(() => {
       setToastMessage(null);
-    }, 4000);
+    }, 3000);
   };
 
-  // Navigation Handlers
-  const handleOpenDetail = (person: Person) => {
-    setSelectedDetailPerson(person);
-    pushNav('detail', person.id);
-  };
-
-  const handleCloseDetail = () => {
-    setSelectedDetailPerson(null);
-    popNav();
-  };
-
+  // Modal Open Handlers with History integration & Haptics
   const handleOpenAddModal = () => {
-    setIsAddModalOpen(true);
+    triggerHaptic('light');
     pushNav('add');
+    setIsAddModalOpen(true);
   };
 
   const handleCloseAddModal = () => {
@@ -118,13 +114,53 @@ export function App() {
   };
 
   const handleOpenSettings = () => {
-    setIsSettingsOpen(true);
+    triggerHaptic('light');
     pushNav('settings');
+    setIsSettingsOpen(true);
   };
 
   const handleCloseSettings = () => {
     setIsSettingsOpen(false);
     popNav();
+  };
+
+  // Detail View Handlers with History
+  const handleOpenDetail = (person: Person) => {
+    triggerHaptic('light');
+    pushNav('detail', person.id);
+    setSelectedDetailPerson(person);
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
+
+  const handleCloseDetail = () => {
+    triggerHaptic('light');
+    setSelectedDetailPerson(null);
+    popNav();
+  };
+
+  // Mobile Bottom Navigation Actions
+  const handleGoHome = () => {
+    if (selectedDetailPerson) {
+      setSelectedDetailPerson(null);
+    }
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
+
+  const handleGoBuddies = () => {
+    if (selectedDetailPerson) {
+      setSelectedDetailPerson(null);
+      setTimeout(() => {
+        const el = document.getElementById('buddies-list');
+        if (el) {
+          el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        }
+      }, 60);
+    } else {
+      const el = document.getElementById('buddies-list');
+      if (el) {
+        el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      }
+    }
   };
 
   // Data Handlers
@@ -280,167 +316,173 @@ export function App() {
               />
             )}
 
-            {/* Search & Filter Bar */}
-            <section className="mt-8">
-              <SearchBar
-                searchQuery={searchQuery}
-                onSearchChange={setSearchQuery}
-                selectedCategory={selectedCategory}
-                onCategoryChange={setSelectedCategory}
-                categories={categories}
-                totalResults={filteredPeople.length}
-              />
-            </section>
+            {/* Buddies Section Anchor & Search / Filter */}
+            <div id="buddies-list" className="scroll-mt-20">
+              <section className="mt-8">
+                <SearchBar
+                  searchQuery={searchQuery}
+                  onSearchChange={setSearchQuery}
+                  selectedCategory={selectedCategory}
+                  onCategoryChange={setSelectedCategory}
+                  categories={categories}
+                  totalResults={filteredPeople.length}
+                />
+              </section>
 
-            {/* ACTION STAGES LAYOUT */}
-            {filteredPeople.length > 0 ? (
-              <div className="space-y-10 mt-6 animate-in fade-in duration-300">
-                {/* 1. 🎂 TODAY SECTION (Highest Visual Emphasis) */}
-                {todayBirthdays.length > 0 && (
-                  <section className="bg-gradient-to-r from-amber-500/15 via-pink-500/15 to-purple-500/15 border-2 border-amber-400/50 rounded-3xl p-5 sm:p-7 shadow-glow-festive">
-                    <div className="flex items-center gap-2 mb-4">
-                      <span className="p-1.5 rounded-xl bg-amber-500 text-white shadow-sm">
-                        <PartyPopper className="w-5 h-5" />
-                      </span>
-                      <div>
-                        <h2 className="text-xl sm:text-2xl font-black text-slate-800 tracking-tight flex items-center gap-2">
-                          <span>Today's Celebrations! 🎉</span>
-                          <span className="text-xs px-2.5 py-0.5 rounded-full bg-amber-500 text-white font-black">
-                            {todayBirthdays.length}
-                          </span>
-                        </h2>
-                        <p className="text-xs text-slate-600 font-semibold">
-                          It's their special day! Tap to prepare and send your birthday wish immediately.
-                        </p>
+              {/* ACTION STAGES LAYOUT */}
+              {filteredPeople.length > 0 ? (
+                <div className="space-y-10 mt-6 animate-in fade-in duration-300">
+                  {/* 1. 🎂 TODAY SECTION (Highest Visual Emphasis) */}
+                  {todayBirthdays.length > 0 && (
+                    <section className="bg-gradient-to-r from-amber-500/15 via-pink-500/10 to-purple-500/15 border-2 border-amber-400/50 rounded-3xl p-5 sm:p-7 shadow-glow-festive">
+                      <div className="flex items-center gap-2 mb-4">
+                        <span className="p-1.5 rounded-xl bg-amber-500 text-white shadow-xs">
+                          <PartyPopper className="w-5 h-5" />
+                        </span>
+                        <div>
+                          <h2 className="text-xl sm:text-2xl font-black text-slate-800 tracking-tight flex items-center gap-2">
+                            <span>Today's Celebrations! 🎉</span>
+                            <span className="text-xs px-2.5 py-0.5 rounded-full bg-amber-500 text-white font-black">
+                              {todayBirthdays.length}
+                            </span>
+                          </h2>
+                          <p className="text-xs text-slate-600 font-medium">
+                            It's their special day! Tap to send your birthday wish immediately.
+                          </p>
+                        </div>
                       </div>
-                    </div>
 
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                      {todayBirthdays.map((person) => {
-                        const firstLetter = person.name ? person.name.charAt(0).toUpperCase() : '?';
-                        return (
-                          <div
-                            key={person.id}
-                            onClick={() => handleOpenDetail(person)}
-                            className="bg-white rounded-2xl p-4 sm:p-5 border border-amber-300 shadow-md hover:shadow-lg transition-all duration-200 cursor-pointer flex items-center justify-between gap-4 group"
-                          >
-                            <div className="flex items-center gap-3.5">
-                              <div className="w-13 h-13 rounded-2xl bg-gradient-to-tr from-amber-500 via-pink-500 to-purple-600 text-white font-black text-xl flex items-center justify-center shadow-sm">
-                                {firstLetter}
-                              </div>
-                              <div>
-                                <h3 className="font-extrabold text-base text-slate-900 group-hover:text-purple-700 transition-colors">
-                                  {person.name}
-                                </h3>
-                                <div className="flex items-center gap-2 text-xs font-semibold text-slate-500 mt-0.5">
-                                  <span className="px-2 py-0.5 rounded-full bg-amber-100 text-amber-900 text-[11px] font-bold">
-                                    {person.relationship}
-                                  </span>
-                                  {person.age_turning ? (
-                                    <span>Turning <strong>{person.age_turning}</strong></span>
-                                  ) : null}
-                                </div>
-                              </div>
-                            </div>
-
-                            <button
-                              type="button"
-                              onClick={(e) => {
-                                e.stopPropagation();
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                        {todayBirthdays.map((person) => {
+                          const firstLetter = person.name ? person.name.charAt(0).toUpperCase() : '?';
+                          return (
+                            <div
+                              key={person.id}
+                              onClick={() => {
+                                triggerCelebration();
                                 handleOpenDetail(person);
                               }}
-                              className="px-4 py-2.5 rounded-xl bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 text-white text-xs font-extrabold shadow-sm flex items-center gap-1.5 flex-shrink-0 group-hover:scale-105 transition-transform"
+                              className="bg-white rounded-2xl p-4 sm:p-5 border border-amber-300 shadow-sm hover:shadow-md transition-all duration-200 cursor-pointer flex items-center justify-between gap-4 group"
                             >
-                              <span>Send Wish 🚀</span>
-                            </button>
+                              <div className="flex items-center gap-3.5">
+                                <div className="w-12 h-12 rounded-2xl bg-gradient-to-tr from-amber-500 via-pink-500 to-purple-600 text-white font-black text-xl flex items-center justify-center shadow-xs">
+                                  {firstLetter}
+                                </div>
+                                <div>
+                                  <h3 className="font-extrabold text-base text-slate-900 group-hover:text-purple-700 transition-colors">
+                                    {person.name}
+                                  </h3>
+                                  <div className="flex items-center gap-2 text-xs font-semibold text-slate-500 mt-0.5">
+                                    <span className="px-2 py-0.5 rounded-full bg-amber-100 text-amber-900 text-[11px] font-bold">
+                                      {person.relationship}
+                                    </span>
+                                    {person.age_turning ? (
+                                      <span>Turning <strong>{person.age_turning}</strong></span>
+                                    ) : null}
+                                  </div>
+                                </div>
+                              </div>
+
+                              <button
+                                type="button"
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  triggerCelebration();
+                                  handleOpenDetail(person);
+                                }}
+                                className="px-4 py-2.5 rounded-xl bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 text-white text-xs font-extrabold shadow-xs flex items-center gap-1.5 flex-shrink-0 active:scale-95 transition-transform"
+                              >
+                                <span>Send Wish 🚀</span>
+                              </button>
+                            </div>
+                          );
+                        })}
+                      </div>
+                    </section>
+                  )}
+
+                  {/* 2. ⏰ THIS WEEK SECTION (Within 7 Days) */}
+                  {thisWeekBirthdays.length > 0 && (
+                    <section>
+                      <div className="flex items-center justify-between mb-4">
+                        <div className="flex items-center gap-2">
+                          <span className="p-1.5 rounded-xl bg-purple-100 text-purple-700">
+                            <Clock className="w-4 h-4" />
+                          </span>
+                          <div>
+                            <h2 className="text-lg sm:text-xl font-extrabold text-slate-800 tracking-tight flex items-center gap-2">
+                              <span>This Week</span>
+                              <span className="text-xs px-2 py-0.5 rounded-full bg-purple-100 text-purple-800 font-bold">
+                                {thisWeekBirthdays.length}
+                              </span>
+                            </h2>
+                            <p className="text-xs text-slate-500 font-medium">
+                              Coming up in the next 7 days — prepare your wishes & gifts
+                            </p>
                           </div>
-                        );
-                      })}
-                    </div>
-                  </section>
-                )}
-
-                {/* 2. ⏰ THIS WEEK SECTION (Within 7 Days) */}
-                {thisWeekBirthdays.length > 0 && (
-                  <section>
-                    <div className="flex items-center justify-between mb-4">
-                      <div className="flex items-center gap-2">
-                        <span className="p-1.5 rounded-xl bg-purple-100 text-purple-700">
-                          <Clock className="w-4 h-4" />
-                        </span>
-                        <div>
-                          <h2 className="text-lg sm:text-xl font-extrabold text-slate-800 tracking-tight flex items-center gap-2">
-                            <span>This Week</span>
-                            <span className="text-xs px-2 py-0.5 rounded-full bg-purple-100 text-purple-800 font-bold">
-                              {thisWeekBirthdays.length}
-                            </span>
-                          </h2>
-                          <p className="text-xs text-slate-500 font-medium">
-                            Coming up in the next 7 days — prepare your wishes & gifts
-                          </p>
                         </div>
                       </div>
-                    </div>
 
-                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-                      {thisWeekBirthdays.map((person) => (
-                        <BirthdayCard
-                          key={person.id}
-                          person={person}
-                          onViewBirthday={handleOpenDetail}
-                          onDelete={handleDeletePerson}
-                        />
-                      ))}
-                    </div>
-                  </section>
-                )}
+                      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                        {thisWeekBirthdays.map((person) => (
+                          <BirthdayCard
+                            key={person.id}
+                            person={person}
+                            onViewBirthday={handleOpenDetail}
+                            onDelete={handleDeletePerson}
+                          />
+                        ))}
+                      </div>
+                    </section>
+                  )}
 
-                {/* 3. 📅 COMING UP SECTION (More than 7 days) */}
-                {comingUpBirthdays.length > 0 && (
-                  <section>
-                    <div className="flex items-center justify-between mb-4">
-                      <div className="flex items-center gap-2">
-                        <span className="p-1.5 rounded-xl bg-slate-100 text-slate-700">
-                          <Calendar className="w-4 h-4" />
-                        </span>
-                        <div>
-                          <h2 className="text-lg sm:text-xl font-extrabold text-slate-800 tracking-tight flex items-center gap-2">
-                            <span>Coming Up</span>
-                            <span className="text-xs px-2 py-0.5 rounded-full bg-slate-100 text-slate-700 font-bold">
-                              {comingUpBirthdays.length}
-                            </span>
-                          </h2>
-                          <p className="text-xs text-slate-500 font-medium">
-                            Sorted by nearest celebration date
-                          </p>
+                  {/* 3. 📅 COMING UP SECTION (More than 7 days) */}
+                  {comingUpBirthdays.length > 0 && (
+                    <section>
+                      <div className="flex items-center justify-between mb-4">
+                        <div className="flex items-center gap-2">
+                          <span className="p-1.5 rounded-xl bg-slate-100 text-slate-700">
+                            <Calendar className="w-4 h-4" />
+                          </span>
+                          <div>
+                            <h2 className="text-lg sm:text-xl font-extrabold text-slate-800 tracking-tight flex items-center gap-2">
+                              <span>Coming Up</span>
+                              <span className="text-xs px-2 py-0.5 rounded-full bg-slate-100 text-slate-700 font-bold">
+                                {comingUpBirthdays.length}
+                              </span>
+                            </h2>
+                            <p className="text-xs text-slate-500 font-medium">
+                              Sorted by nearest celebration date
+                            </p>
+                          </div>
                         </div>
                       </div>
-                    </div>
 
-                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-                      {comingUpBirthdays.map((person) => (
-                        <BirthdayCard
-                          key={person.id}
-                          person={person}
-                          onViewBirthday={handleOpenDetail}
-                          onDelete={handleDeletePerson}
-                        />
-                      ))}
-                    </div>
-                  </section>
-                )}
-              </div>
-            ) : (
-              <EmptyState
-                isSearching={Boolean(searchQuery || selectedCategory.toLowerCase() !== 'all')}
-                onOpenAddModal={handleOpenAddModal}
-                onClearSearch={() => {
-                  setSearchQuery('');
-                  setSelectedCategory('All');
-                }}
-                onSeedSampleData={people.length === 0 ? handleSeedSampleData : undefined}
-              />
-            )}
+                      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                        {comingUpBirthdays.map((person) => (
+                          <BirthdayCard
+                            key={person.id}
+                            person={person}
+                            onViewBirthday={handleOpenDetail}
+                            onDelete={handleDeletePerson}
+                          />
+                        ))}
+                      </div>
+                    </section>
+                  )}
+                </div>
+              ) : (
+                <EmptyState
+                  isSearching={Boolean(searchQuery || selectedCategory.toLowerCase() !== 'all')}
+                  onOpenAddModal={handleOpenAddModal}
+                  onClearSearch={() => {
+                    setSearchQuery('');
+                    setSelectedCategory('All');
+                  }}
+                  onSeedSampleData={people.length === 0 ? handleSeedSampleData : undefined}
+                />
+              )}
+            </div>
           </>
         )}
       </main>
@@ -448,6 +490,8 @@ export function App() {
       {/* Mobile Bottom Navigation */}
       <BottomNav
         onOpenAddModal={handleOpenAddModal}
+        onGoHome={handleGoHome}
+        onGoBuddies={handleGoBuddies}
         totalCount={people.length}
       />
 

@@ -1,44 +1,27 @@
 import React, { useState, useEffect } from 'react';
 import { 
-  ArrowLeft, Calendar, Clock, Sparkles, Copy, Check, RefreshCw, 
-  Trash2, PartyPopper, MessageSquare, Quote, Share2, 
-  Send, Edit3, AlertTriangle
+  ArrowLeft, 
+  Calendar, 
+  Clock, 
+  PartyPopper, 
+  Sparkles, 
+  MessageSquare, 
+  Copy, 
+  Check, 
+  Share2, 
+  Send, 
+  RefreshCw, 
+  Edit3, 
+  Trash2, 
+  AlertTriangle 
 } from 'lucide-react';
 import { Person, PersonInput } from '../types';
-import { formatBirthdayDate, getCountdownBadge, getZodiacSign, calculateBirthdayDetails } from '../utils/dateUtils';
-import { fireBirthdayConfetti } from '../utils/confetti';
+import { formatBirthdayDate, getCountdownBadge, getZodiacSign } from '../utils/dateUtils';
 import { getRandomMessage, MessageStyle, MESSAGE_STYLES } from '../utils/messageTemplates';
 import { triggerCelebration } from '../utils/celebrationService';
+import { triggerHaptic } from '../utils/hapticsService';
 import { EditPersonModal } from './EditPersonModal';
-import { pushNav, popNav, AppNavState } from '../utils/navigation';
-
-// Brand SVGs for Pixel-Perfect Social Media Handoffs
-const WhatsAppIcon: React.FC<{ className?: string }> = ({ className = 'w-4 h-4' }) => (
-  <svg viewBox="0 0 24 24" className={className} fill="currentColor">
-    <path d="M12.031 6.172c-3.181 0-5.767 2.586-5.768 5.766-.001 1.298.38 2.27 1.019 3.287l-.711 2.598 2.664-.699c.97.53 1.77.82 2.8.82 3.182 0 5.769-2.587 5.769-5.766.001-3.182-2.585-5.806-5.773-5.806zm0 10.373c-.88 0-1.603-.244-2.316-.667l-.165-.098-1.576.413.421-1.536-.107-.171c-.464-.739-.709-1.464-.708-2.314.001-2.525 2.055-4.579 4.451-4.579 2.395 0 4.449 2.054 4.45 4.58-.001 2.526-2.056 4.372-4.45 4.372z"/>
-    <path d="M12 2C6.477 2 2 6.477 2 12c0 1.891.524 3.66 1.434 5.176L2 22l5.006-1.312C8.447 21.498 10.174 22 12 22c5.523 0 10-4.477 10-10S17.523 2 12 2zm0 18.273c-1.637 0-3.15-.494-4.417-1.341l-.317-.214-2.966.778.792-2.892-.236-.375C3.963 14.908 3.455 13.493 3.455 12c0-4.712 3.833-8.545 8.545-8.545 4.713 0 8.545 3.833 8.545 8.545 0 4.713-3.832 8.273-8.545 8.273z"/>
-  </svg>
-);
-
-const InstagramIcon: React.FC<{ className?: string }> = ({ className = 'w-4 h-4' }) => (
-  <svg viewBox="0 0 24 24" className={className} fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
-    <rect x="2" y="2" width="20" height="20" rx="5" ry="5"/>
-    <path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z"/>
-    <line x1="17.5" y1="6.5" x2="17.51" y2="6.5"/>
-  </svg>
-);
-
-const FacebookIcon: React.FC<{ className?: string }> = ({ className = 'w-4 h-4' }) => (
-  <svg viewBox="0 0 24 24" className={className} fill="currentColor">
-    <path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z"/>
-  </svg>
-);
-
-const SnapchatIcon: React.FC<{ className?: string }> = ({ className = 'w-4 h-4' }) => (
-  <svg viewBox="0 0 24 24" className={className} fill="currentColor">
-    <path d="M12.001 2.5c-3.528 0-5.833 2.508-5.833 5.485 0 .977.29 2.052.748 2.766.126.195.074.45-.116.583-.497.35-.99.553-1.455.597-.37.035-.558.461-.284.72.767.724 1.77 1.054 2.585 1.135.132.013.235.107.262.237.135.65.65 1.572 1.957 1.83.218.043.376.223.385.445.027.69-.326 1.258-1.583 1.728-.507.19-.884.674-.632 1.207.242.511.968.767 2.012.767.893 0 1.63-.16 2.074-.473.18-.127.42-.116.587.026.495.42 1.136.647 1.903.647.765 0 1.406-.227 1.9-.647.167-.142.408-.153.588-.026.444.313 1.18.473 2.074.473 1.044 0 1.77-.256 2.012-.767.252-.533-.125-1.017-.632-1.207-1.257-.47-1.61-1.038-1.583-1.728.009-.222.167-.402.385-.445 1.307-.258 1.822-1.18 1.957-1.83.027-.13.13-.224.262-.237.815-.081 1.818-.411 2.585-1.135.274-.259.086-.685-.284-.72-.465-.044-.958-.247-1.455-.597-.19-.133-.242-.388-.116-.583.458-.714.748-1.789.748-2.766 0-2.977-2.305-5.485-5.833-5.485z"/>
-  </svg>
-);
+import { pushNav, popNav } from '../utils/navigation';
 
 interface BirthdayDetailPageProps {
   person: Person;
@@ -47,92 +30,104 @@ interface BirthdayDetailPageProps {
   onUpdate: (id: number, data: Partial<PersonInput>) => Promise<Person>;
 }
 
+// Pixel-perfect Brand Icons
+const WhatsAppIcon: React.FC<{ className?: string }> = ({ className = 'w-4 h-4' }) => (
+  <svg className={className} viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+    <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/>
+  </svg>
+);
+
+const InstagramIcon: React.FC<{ className?: string }> = ({ className = 'w-4 h-4' }) => (
+  <svg className={className} viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+    <path d="M12 2.163c3.204 0 3.584.012 4.85.07 3.252.148 4.771 1.691 4.919 4.919.058 1.265.069 1.645.069 4.849 0 3.205-.012 3.584-.069 4.849-.149 3.225-1.664 4.771-4.919 4.919-1.266.058-1.644.07-4.85.07-3.204 0-3.584-.012-4.849-.07-3.26-.149-4.771-1.699-4.919-4.92-.058-1.265-.07-1.644-.07-4.849 0-3.204.013-3.583.07-4.849.149-3.227 1.664-4.771 4.919-4.919 1.266-.057 1.645-.069 4.849-.069zm0-2.163c-3.259 0-3.667.014-4.947.072-4.358.2-6.78 2.618-6.98 6.98-.059 1.281-.073 1.689-.073 4.948 0 3.259.014 3.668.072 4.948.2 4.358 2.618 6.78 6.98 6.98 1.281.058 1.689.072 4.948.072 3.259 0 3.668-.014 4.948-.072 4.354-.2 6.782-2.618 6.979-6.98.059-1.28.073-1.689.073-4.948 0-3.259-.014-3.667-.072-4.947-.196-4.354-2.617-6.78-6.979-6.98-1.281-.059-1.69-.073-4.949-.073zm0 5.838c-3.403 0-6.162 2.759-6.162 6.162s2.759 6.163 6.162 6.163 6.162-2.759 6.162-6.163c0-3.403-2.759-6.162-6.162-6.162zm0 10.162c-2.209 0-4-1.79-4-4 0-2.209 1.791-4 4-4s4 1.791 4 4c0 2.21-1.791 4-4 4zm6.406-11.845c-.796 0-1.441.645-1.441 1.44s.645 1.44 1.441 1.44c.795 0 1.439-.645 1.439-1.44s-.644-1.44-1.439-1.44z"/>
+  </svg>
+);
+
+const FacebookIcon: React.FC<{ className?: string }> = ({ className = 'w-4 h-4' }) => (
+  <svg className={className} viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+    <path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z"/>
+  </svg>
+);
+
+const SnapchatIcon: React.FC<{ className?: string }> = ({ className = 'w-4 h-4' }) => (
+  <svg className={className} viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+    <path d="M12.004 0c-4.148 0-6.996 2.946-6.996 6.368 0 .809.176 1.621.494 2.367l.115.263-.443.088c-.689.136-1.15.422-1.37.85-.205.4-.176.89.083 1.377.291.545.86 1.043 1.644 1.442l.33.167-.184.322c-.413.722-.843 1.34-1.328 1.905l-.544.633.791.267c.725.244 1.36.567 1.892.96.14.103.264.214.372.331l.244.266-.328.143c-.76.331-1.393.754-1.884 1.258-.456.467-.714.97-.768 1.493-.058.552.128 1.065.553 1.526.471.511 1.189.845 2.133.992l.504.079-.196.469c-.482 1.153-.615 2.052-.416 2.83.218.852.836 1.44 1.839 1.748 1.025.315 2.378.435 4.02.358l.492-.023.493.023c1.642.077 2.995-.043 4.02-.358 1.003-.308 1.621-.896 1.839-1.748.199-.778.066-1.677-.416-2.83l-.196-.469.504-.079c.944-.147 1.662-.481 2.133-.992.425-.461.611-.974.553-1.526-.054-.523-.312-1.026-.768-1.493-.491-.504-1.124-.927-1.884-1.258l-.328-.143.244-.266c.108-.117.232-.228.372-.331.532-.393 1.167-.716 1.892-.96l.791-.267-.544-.633c-.485-.565-.915-1.183-1.328-1.905l-.184-.322.33-.167c.784-.399 1.353-.897 1.644-1.442.259-.487.288-.977.083-1.377-.22-.428-.681-.714-1.37-.85l-.443-.088.115-.263c.318-.746.494-1.558.494-2.367C19 2.946 16.152 0 12.004 0z"/>
+  </svg>
+);
+
 export const BirthdayDetailPage: React.FC<BirthdayDetailPageProps> = ({
-  person: initialPerson,
+  person,
   onBack,
   onDelete,
   onUpdate,
 }) => {
-  const [currentPerson, setCurrentPerson] = useState<Person>(initialPerson);
+  const [currentPerson, setCurrentPerson] = useState<Person>(person);
   const [selectedStyle, setSelectedStyle] = useState<MessageStyle>('Simple');
   const [generatedMessage, setGeneratedMessage] = useState<string>('');
-  const [copied, setCopied] = useState<boolean>(false);
-  const [isRotating, setIsRotating] = useState<boolean>(false);
+  const [copied, setCopied] = useState(false);
+  const [isRotating, setIsRotating] = useState(false);
+  const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+  const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
+  const [isDeleting, setIsDeleting] = useState(false);
   const [toastFeedback, setToastFeedback] = useState<string | null>(null);
 
-  // Modals state
-  const [isEditModalOpen, setIsEditModalOpen] = useState<boolean>(false);
-  const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState<boolean>(false);
-  const [isDeleting, setIsDeleting] = useState<boolean>(false);
-
-  // Synchronize when initialPerson changes from parent
+  // Sync state if prop changes
   useEffect(() => {
-    setCurrentPerson(initialPerson);
-  }, [initialPerson]);
+    setCurrentPerson(person);
+  }, [person]);
 
-  // Listen for history popstate to dismiss edit/delete sub-modals
-  useEffect(() => {
-    const handlePopState = (e: PopStateEvent) => {
-      const state = e.state as AppNavState | null;
-      if (!state) return;
-      if (state.view !== 'edit') {
-        setIsEditModalOpen(false);
-      }
-      if (state.view !== 'delete') {
-        setIsDeleteDialogOpen(false);
-      }
-    };
-
-    window.addEventListener('popstate', handlePopState);
-    return () => window.removeEventListener('popstate', handlePopState);
-  }, []);
-
-  // Recalculate countdown details dynamically based on currentPerson
-  const { days_until, age_turning, is_today } = calculateBirthdayDetails(currentPerson.birthday);
-  const daysRemaining = currentPerson.days_remaining ?? days_until;
-  const isToday = daysRemaining === 0 || is_today;
-  const isTomorrow = daysRemaining === 1;
-  const badge = getCountdownBadge(daysRemaining);
-  const zodiac = getZodiacSign(currentPerson.birthday);
-  const firstLetter = currentPerson.name ? currentPerson.name.charAt(0).toUpperCase() : '?';
-
-  const showToast = (msg: string) => {
-    setToastFeedback(msg);
-    setTimeout(() => setToastFeedback(null), 3500);
-  };
-
-  // Generate initial wish on mount or style change
+  // Generate initial wish message on person/style load
   useEffect(() => {
     const msg = getRandomMessage(selectedStyle, currentPerson.name);
     setGeneratedMessage(msg);
-  }, [selectedStyle, currentPerson.name]);
+  }, [currentPerson.name, selectedStyle]);
 
+  // Derived date calculation metrics
+  const daysRemaining = currentPerson.days_remaining ?? currentPerson.days_until ?? 0;
+  const isToday = daysRemaining === 0;
+  const isTomorrow = daysRemaining === 1;
+  const badge = getCountdownBadge(daysRemaining);
+  const zodiac = getZodiacSign(currentPerson.birthday);
+  const age_turning = currentPerson.age_turning;
+  const firstLetter = currentPerson.name ? currentPerson.name.charAt(0).toUpperCase() : '?';
+
+  // Toast Helper
+  const showToast = (msg: string) => {
+    setToastFeedback(msg);
+    setTimeout(() => setToastFeedback(null), 3000);
+  };
+
+  // Tone Selection Handler
   const handleSelectStyle = (style: MessageStyle) => {
+    triggerHaptic('light');
     setSelectedStyle(style);
     const msg = getRandomMessage(style, currentPerson.name);
     setGeneratedMessage(msg);
   };
 
+  // Regenerate / Shuffle Handler
   const handleRegenerate = () => {
+    triggerHaptic('light');
     setIsRotating(true);
-    setTimeout(() => setIsRotating(false), 400);
     const msg = getRandomMessage(selectedStyle, currentPerson.name, generatedMessage);
     setGeneratedMessage(msg);
+    setTimeout(() => setIsRotating(false), 300);
   };
 
-  // Helper to copy text to clipboard without breaking popup/sync event context
+  // Safe Universal Clipboard Copy Helper
   const copyWishToClipboard = (text: string) => {
     try {
       if (navigator.clipboard && navigator.clipboard.writeText) {
         navigator.clipboard.writeText(text).catch(() => {});
       }
     } catch {
-      // Ignore copy error
+      // Ignore
     }
   };
 
   // 1. WhatsApp Action
   const handleSendWhatsApp = () => {
+    triggerHaptic('light');
     const msg = generatedMessage.trim();
     if (!msg) return;
     const encoded = encodeURIComponent(msg);
@@ -140,17 +135,19 @@ export const BirthdayDetailPage: React.FC<BirthdayDetailPageProps> = ({
     window.open(whatsappUrl, '_blank', 'noopener,noreferrer');
   };
 
-  // 2. Instagram Action (Copies wish synchronously & opens Instagram Direct Inbox)
+  // 2. Instagram Action (Copies wish & opens Instagram Direct Inbox)
   const handleSendInstagram = () => {
+    triggerHaptic('light');
     const msg = generatedMessage.trim();
     if (!msg) return;
     copyWishToClipboard(msg);
-    showToast('Wish copied to clipboard! Paste it into Instagram DM 📸');
+    showToast('Wish copied! Paste into Instagram DM 📸');
     window.open('https://www.instagram.com/direct/inbox/', '_blank', 'noopener,noreferrer');
   };
 
-  // 3. Facebook / Messenger Action (Copies wish & opens Facebook Share)
+  // 3. Facebook / Messenger Action
   const handleSendFacebook = () => {
+    triggerHaptic('light');
     const msg = generatedMessage.trim();
     if (!msg) return;
     copyWishToClipboard(msg);
@@ -159,8 +156,9 @@ export const BirthdayDetailPage: React.FC<BirthdayDetailPageProps> = ({
     window.open(`https://www.facebook.com/sharer/sharer.php?quote=${encoded}`, '_blank', 'noopener,noreferrer');
   };
 
-  // 4. Snapchat Action (Copies wish & opens Snapchat Share)
+  // 4. Snapchat Action
   const handleSendSnapchat = () => {
+    triggerHaptic('light');
     const msg = generatedMessage.trim();
     if (!msg) return;
     copyWishToClipboard(msg);
@@ -171,6 +169,7 @@ export const BirthdayDetailPage: React.FC<BirthdayDetailPageProps> = ({
 
   // 5. Copy Action
   const handleCopy = async () => {
+    triggerHaptic('medium');
     const msg = generatedMessage.trim();
     if (!msg) return;
     try {
@@ -185,6 +184,7 @@ export const BirthdayDetailPage: React.FC<BirthdayDetailPageProps> = ({
 
   // 6. Web Share API Action (Mobile Native Sheet)
   const handleShare = async () => {
+    triggerHaptic('light');
     const msg = generatedMessage.trim();
     if (!msg) return;
     if (navigator.share) {
@@ -206,20 +206,26 @@ export const BirthdayDetailPage: React.FC<BirthdayDetailPageProps> = ({
 
   // 7. SMS Handoff Action
   const handleSendSMS = () => {
+    triggerHaptic('light');
     const msg = generatedMessage.trim();
     if (!msg) return;
     const encoded = encodeURIComponent(msg);
     window.location.href = `sms:?body=${encoded}`;
   };
 
-  // 8. Celebration Action (Explicit user tap on Celebrate button)
+  // 8. Celebration Action
   const handleCelebrate = () => {
     triggerCelebration();
     showToast(`Happy Birthday ${currentPerson.name}! 🥳🎉`);
+    const studio = document.getElementById('wish-studio');
+    if (studio) {
+      studio.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    }
   };
 
   // Open Edit Modal with History
   const handleOpenEdit = () => {
+    triggerHaptic('light');
     pushNav('edit', currentPerson.id);
     setIsEditModalOpen(true);
   };
@@ -232,6 +238,7 @@ export const BirthdayDetailPage: React.FC<BirthdayDetailPageProps> = ({
 
   // Save Edit Handler
   const handleSaveEdit = async (id: number, data: Partial<PersonInput>) => {
+    triggerHaptic('success');
     const updated = await onUpdate(id, data);
     setCurrentPerson(updated);
     setIsEditModalOpen(false);
@@ -241,6 +248,7 @@ export const BirthdayDetailPage: React.FC<BirthdayDetailPageProps> = ({
 
   // Open Delete Dialog with History
   const handleOpenDelete = () => {
+    triggerHaptic('medium');
     pushNav('delete', currentPerson.id);
     setIsDeleteDialogOpen(true);
   };
@@ -253,6 +261,7 @@ export const BirthdayDetailPage: React.FC<BirthdayDetailPageProps> = ({
 
   // Confirm Delete Handler
   const handleConfirmDelete = async () => {
+    triggerHaptic('medium');
     try {
       setIsDeleting(true);
       await onDelete(currentPerson.id);
@@ -266,7 +275,7 @@ export const BirthdayDetailPage: React.FC<BirthdayDetailPageProps> = ({
 
   return (
     <div className="w-full max-w-4xl mx-auto space-y-6 animate-in fade-in slide-in-from-bottom-2 duration-300">
-      {/* Toast Notification */}
+      {/* Toast Feedback */}
       {toastFeedback && (
         <div className="fixed top-5 left-1/2 -translate-x-1/2 z-50 animate-in fade-in slide-in-from-top-4 duration-300">
           <div className="flex items-center gap-2 px-5 py-3 rounded-full bg-slate-900 text-white text-xs sm:text-sm font-bold shadow-2xl border border-slate-700">
@@ -276,15 +285,22 @@ export const BirthdayDetailPage: React.FC<BirthdayDetailPageProps> = ({
         </div>
       )}
 
-      {/* STICKY TOP NAVIGATION / ACTION BAR */}
-      <div className="sticky top-14 sm:top-16 z-20 w-full py-2.5 bg-[#FAF8F5]/95 backdrop-blur-md border-b border-warm-200/70 flex items-center justify-between gap-3 shadow-xs transition-all mb-2">
+      {/* CLEAR, HIGH-CONTRAST TOP APP BAR / BACK NAVIGATION */}
+      <div className="sticky top-14 sm:top-16 z-20 w-full py-2.5 bg-[#FAF8F5]/95 backdrop-blur-md border-b border-slate-200/80 flex items-center justify-between gap-3 shadow-xs transition-all mb-2">
+        {/* Android-style clean, distinct Back Navigation */}
         <button
           type="button"
-          onClick={onBack}
-          className="inline-flex items-center gap-2 px-4 py-2 rounded-2xl bg-white hover:bg-warm-100 text-slate-700 hover:text-slate-900 border border-warm-200/90 text-xs sm:text-sm font-extrabold shadow-sm transition-all active:scale-95 group"
+          onClick={() => {
+            triggerHaptic('light');
+            onBack();
+          }}
+          className="inline-flex items-center gap-2.5 py-1 px-1 -ml-1 text-slate-800 hover:text-purple-700 font-bold text-sm sm:text-base group active:scale-95 transition-all focus:outline-none"
+          aria-label="Back to Birthdays"
         >
-          <ArrowLeft className="w-4 h-4 text-slate-500 group-hover:-translate-x-0.5 transition-transform" />
-          <span>Back to Birthdays</span>
+          <div className="w-8 h-8 rounded-full bg-white border border-slate-200/90 shadow-xs flex items-center justify-center text-slate-700 group-hover:bg-purple-50 group-hover:text-purple-700 group-hover:border-purple-200 transition-colors">
+            <ArrowLeft className="w-4 h-4 text-slate-700 group-hover:text-purple-700 group-hover:-translate-x-0.5 transition-transform" />
+          </div>
+          <span className="tracking-tight font-extrabold">Back to Birthdays</span>
         </button>
 
         {/* Action icons: Edit & Delete */}
@@ -293,7 +309,7 @@ export const BirthdayDetailPage: React.FC<BirthdayDetailPageProps> = ({
           <button
             type="button"
             onClick={handleOpenEdit}
-            className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-2xl bg-white hover:bg-purple-50 text-slate-700 hover:text-purple-700 border border-warm-200/90 hover:border-purple-200 text-xs font-bold transition-all shadow-sm active:scale-95"
+            className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-white hover:bg-purple-50 text-slate-700 hover:text-purple-700 border border-slate-200/90 hover:border-purple-200 text-xs font-bold transition-all shadow-xs active:scale-95"
             title="Edit Person"
           >
             <Edit3 className="w-3.5 h-3.5 text-purple-600" />
@@ -304,7 +320,7 @@ export const BirthdayDetailPage: React.FC<BirthdayDetailPageProps> = ({
           <button
             type="button"
             onClick={handleOpenDelete}
-            className="w-9 h-9 rounded-2xl bg-white hover:bg-rose-50 text-slate-400 hover:text-rose-600 border border-warm-200/90 hover:border-rose-200 flex items-center justify-center transition-colors shadow-sm active:scale-95"
+            className="w-8 h-8 rounded-xl bg-white hover:bg-rose-50 text-slate-500 hover:text-rose-600 border border-slate-200/90 hover:border-rose-200 flex items-center justify-center transition-colors shadow-xs active:scale-95"
             title="Delete Person"
             aria-label="Delete Person"
           >
@@ -316,38 +332,38 @@ export const BirthdayDetailPage: React.FC<BirthdayDetailPageProps> = ({
       {/* HERO / PERSON HEADER CARD */}
       <div className={`relative overflow-hidden rounded-3xl border transition-all duration-300 p-6 sm:p-8 shadow-card ${
         isToday 
-          ? 'bg-gradient-to-r from-amber-500/20 via-pink-500/15 to-purple-600/20 border-amber-300 shadow-glow-festive' 
+          ? 'bg-gradient-to-r from-amber-500/15 via-pink-500/10 to-purple-600/15 border-amber-300/80 shadow-glow-festive' 
           : 'bg-white border-warm-200/90'
       }`}>
         <div className="relative z-10 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-6">
           <div className="flex items-center gap-4 sm:gap-6">
             {/* Avatar Badge */}
-            <div className={`w-16 h-16 sm:w-20 sm:h-20 rounded-3xl flex items-center justify-center text-white font-black text-2xl sm:text-3xl shadow-soft flex-shrink-0 ${
+            <div className={`w-16 h-16 sm:w-20 sm:h-20 rounded-2xl flex items-center justify-center text-white font-black text-2xl sm:text-3xl shadow-sm flex-shrink-0 ${
               isToday
-                ? 'bg-gradient-to-tr from-amber-500 via-pink-500 to-rose-500 ring-4 ring-amber-300/60 animate-bounce-subtle'
+                ? 'bg-gradient-to-tr from-amber-500 via-pink-500 to-rose-500 ring-4 ring-amber-300/60'
                 : 'bg-gradient-to-tr from-purple-600 via-indigo-600 to-pink-500'
             }`}>
               {isToday ? '🎂' : firstLetter}
             </div>
 
             {/* Name & Basic Info */}
-            <div className="space-y-1.5">
+            <div className="space-y-1">
               <div className="flex items-center gap-2.5 flex-wrap">
                 <h1 className="text-2xl sm:text-3xl font-black text-slate-900 tracking-tight">
                   {currentPerson.name}
                 </h1>
-                <span className="px-2.5 py-0.5 rounded-full text-xs font-bold bg-purple-100 text-purple-800 border border-purple-200">
+                <span className="px-2.5 py-0.5 rounded-full text-xs font-semibold bg-slate-100 text-slate-700 border border-slate-200">
                   {currentPerson.relationship}
                 </span>
                 {zodiac && (
-                  <span className="text-xs font-semibold text-slate-500 bg-slate-100 px-2.5 py-0.5 rounded-full border border-slate-200">
-                    {zodiac}
+                  <span className="text-xs text-slate-400 font-medium">
+                    ({zodiac})
                   </span>
                 )}
               </div>
 
-              {/* Date & Turning Age */}
-              <div className="flex flex-wrap items-center gap-3 text-xs sm:text-sm text-slate-600 font-medium">
+              {/* Birthday Date & Age/Countdown */}
+              <div className="flex flex-wrap items-center gap-2.5 text-xs sm:text-sm text-slate-600 font-medium pt-0.5">
                 <span className="flex items-center gap-1.5">
                   <Calendar className="w-4 h-4 text-purple-600" />
                   <span>{formatBirthdayDate(currentPerson.birthday)}</span>
@@ -372,32 +388,32 @@ export const BirthdayDetailPage: React.FC<BirthdayDetailPageProps> = ({
             </div>
           </div>
 
-          {/* Right Badge & Celebrate Button */}
+          {/* Right Badge & Unified Celebrate Action */}
           <div className="flex flex-col sm:items-end gap-2 w-full sm:w-auto">
-            <span className={`inline-flex items-center gap-1.5 px-4 py-2 rounded-2xl text-xs sm:text-sm font-extrabold shadow-sm ${badge.className}`}>
+            <span className={`inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-2xl text-xs sm:text-sm font-extrabold shadow-xs ${badge.className}`}>
               {badge.text}
             </span>
 
-            {/* CELEBRATE BUTTON - Shown ONLY on Today's Birthday */}
+            {/* CELEBRATE BUTTON - Shown on Today's Birthday */}
             {isToday && (
               <button
                 type="button"
                 onClick={handleCelebrate}
-                className="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-2xl bg-gradient-to-r from-amber-500 via-rose-500 to-purple-600 hover:from-amber-600 hover:to-purple-700 text-white font-black text-xs sm:text-sm shadow-soft hover:shadow-soft-hover transform active:scale-95 transition-all duration-200 animate-pulse-glow"
+                className="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-2xl bg-gradient-to-r from-amber-400 via-rose-500 to-purple-600 hover:from-amber-500 hover:to-purple-700 text-white font-black text-xs sm:text-sm shadow-md hover:shadow-lg transform active:scale-95 transition-all"
                 title="Celebrate Birthday!"
               >
-                <PartyPopper className="w-4 h-4 animate-bounce" />
+                <PartyPopper className="w-4 h-4" />
                 <span>🎉 Celebrate!</span>
               </button>
             )}
           </div>
         </div>
 
-        {/* Notes & Reminder preferences box */}
+        {/* Optional Notes & Reminders */}
         {(currentPerson.notes || currentPerson.reminder_days) && (
-          <div className="mt-5 pt-5 border-t border-warm-200/80 grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs">
+          <div className="mt-5 pt-4 border-t border-slate-200/80 grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs">
             {currentPerson.notes && (
-              <div className="bg-warm-50/70 p-3 rounded-2xl border border-warm-200/70">
+              <div className="bg-slate-50 p-3 rounded-2xl border border-slate-200/70">
                 <span className="font-bold text-slate-700 uppercase tracking-wider block mb-1 text-[10px]">
                   💡 Notes & Ideas:
                 </span>
@@ -405,7 +421,7 @@ export const BirthdayDetailPage: React.FC<BirthdayDetailPageProps> = ({
               </div>
             )}
             {currentPerson.reminder_days && (
-              <div className="bg-warm-50/70 p-3 rounded-2xl border border-warm-200/70">
+              <div className="bg-slate-50 p-3 rounded-2xl border border-slate-200/70">
                 <span className="font-bold text-slate-700 uppercase tracking-wider block mb-1 text-[10px]">
                   🔔 Active Reminders:
                 </span>
@@ -422,7 +438,7 @@ export const BirthdayDetailPage: React.FC<BirthdayDetailPageProps> = ({
       </div>
 
       {/* WISH PREPARATION STUDIO */}
-      <section className="bg-white rounded-3xl border border-warm-200/90 p-6 sm:p-8 shadow-card space-y-6">
+      <section id="wish-studio" className="bg-white rounded-3xl border border-warm-200/90 p-6 sm:p-8 shadow-card space-y-6">
         <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
           <div>
             <div className="flex items-center gap-2 text-xs font-black uppercase tracking-wider text-purple-600 mb-1">
@@ -441,7 +457,7 @@ export const BirthdayDetailPage: React.FC<BirthdayDetailPageProps> = ({
           <button
             type="button"
             onClick={handleRegenerate}
-            className="inline-flex items-center gap-2 px-4 py-2.5 rounded-2xl bg-warm-100 hover:bg-warm-200 text-slate-700 hover:text-slate-900 font-bold text-xs shadow-sm transition-all active:scale-95"
+            className="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 hover:text-slate-900 font-bold text-xs shadow-xs transition-all active:scale-95"
             title="Try another variation"
           >
             <RefreshCw className={`w-3.5 h-3.5 text-purple-600 ${isRotating ? 'animate-spin' : ''}`} />
@@ -464,8 +480,8 @@ export const BirthdayDetailPage: React.FC<BirthdayDetailPageProps> = ({
                   onClick={() => handleSelectStyle(style.id)}
                   className={`p-3 rounded-2xl border text-left transition-all duration-200 flex flex-col justify-between gap-1.5 ${
                     isSelected
-                      ? 'bg-purple-600 text-white border-purple-600 shadow-soft scale-[1.02]'
-                      : 'bg-warm-50/60 hover:bg-warm-100 text-slate-700 border-warm-200/90'
+                      ? 'bg-purple-600 text-white border-purple-600 shadow-sm scale-[1.02]'
+                      : 'bg-slate-50 hover:bg-slate-100 text-slate-700 border-slate-200'
                   }`}
                 >
                   <span className="text-lg">{style.emoji}</span>
@@ -500,7 +516,7 @@ export const BirthdayDetailPage: React.FC<BirthdayDetailPageProps> = ({
               value={generatedMessage}
               onChange={(e) => setGeneratedMessage(e.target.value)}
               placeholder="Write your custom birthday wish here..."
-              className="w-full p-4 sm:p-5 rounded-2xl bg-warm-50/90 border border-warm-200 text-slate-800 text-sm sm:text-base font-medium leading-relaxed shadow-inner focus:outline-none focus:ring-2 focus:ring-purple-500 focus:bg-white transition-all resize-y min-h-[110px]"
+              className="w-full p-4 sm:p-5 rounded-2xl bg-slate-50 border border-slate-200 text-slate-800 text-sm sm:text-base font-medium leading-relaxed shadow-inner focus:outline-none focus:ring-2 focus:ring-purple-500 focus:bg-white transition-all resize-y min-h-[110px]"
             />
           </div>
           <p className="text-[11px] text-slate-500 flex items-center gap-1 italic">
@@ -521,7 +537,7 @@ export const BirthdayDetailPage: React.FC<BirthdayDetailPageProps> = ({
               <button
                 type="button"
                 onClick={handleSendWhatsApp}
-                className="flex items-center justify-center gap-2 py-3.5 px-3 rounded-2xl bg-[#25D366] hover:bg-[#20BD5A] text-white font-extrabold text-xs sm:text-sm shadow-soft hover:shadow-soft-hover transform active:scale-95 transition-all"
+                className="flex items-center justify-center gap-2 py-3 px-3 rounded-2xl bg-[#25D366] hover:bg-[#20BD5A] text-white font-extrabold text-xs sm:text-sm shadow-xs hover:shadow-sm transform active:scale-95 transition-all"
                 title="Send via WhatsApp"
               >
                 <WhatsAppIcon className="w-4 h-4" />
@@ -532,7 +548,7 @@ export const BirthdayDetailPage: React.FC<BirthdayDetailPageProps> = ({
               <button
                 type="button"
                 onClick={handleSendInstagram}
-                className="flex items-center justify-center gap-2 py-3.5 px-3 rounded-2xl bg-gradient-to-r from-[#833ab4] via-[#fd1d1d] to-[#fcb045] hover:opacity-95 text-white font-extrabold text-xs sm:text-sm shadow-soft hover:shadow-soft-hover transform active:scale-95 transition-all"
+                className="flex items-center justify-center gap-2 py-3 px-3 rounded-2xl bg-gradient-to-r from-[#833ab4] via-[#fd1d1d] to-[#fcb045] hover:opacity-95 text-white font-extrabold text-xs sm:text-sm shadow-xs hover:shadow-sm transform active:scale-95 transition-all"
                 title="Send via Instagram Direct"
               >
                 <InstagramIcon className="w-4 h-4" />
@@ -543,7 +559,7 @@ export const BirthdayDetailPage: React.FC<BirthdayDetailPageProps> = ({
               <button
                 type="button"
                 onClick={handleSendFacebook}
-                className="flex items-center justify-center gap-2 py-3.5 px-3 rounded-2xl bg-[#1877F2] hover:bg-[#166FE5] text-white font-extrabold text-xs sm:text-sm shadow-soft hover:shadow-soft-hover transform active:scale-95 transition-all"
+                className="flex items-center justify-center gap-2 py-3 px-3 rounded-2xl bg-[#1877F2] hover:bg-[#166FE5] text-white font-extrabold text-xs sm:text-sm shadow-xs hover:shadow-sm transform active:scale-95 transition-all"
                 title="Send via Facebook"
               >
                 <FacebookIcon className="w-4 h-4" />
@@ -554,7 +570,7 @@ export const BirthdayDetailPage: React.FC<BirthdayDetailPageProps> = ({
               <button
                 type="button"
                 onClick={handleSendSnapchat}
-                className="flex items-center justify-center gap-2 py-3.5 px-3 rounded-2xl bg-[#FFFC00] hover:bg-[#F2EE00] text-slate-950 font-black text-xs sm:text-sm shadow-soft hover:shadow-soft-hover transform active:scale-95 transition-all border border-amber-300/80"
+                className="flex items-center justify-center gap-2 py-3 px-3 rounded-2xl bg-[#FFFC00] hover:bg-[#F2EE00] text-slate-950 font-black text-xs sm:text-sm shadow-xs hover:shadow-sm transform active:scale-95 transition-all border border-amber-300"
                 title="Send via Snapchat"
               >
                 <SnapchatIcon className="w-4 h-4" />
@@ -569,10 +585,10 @@ export const BirthdayDetailPage: React.FC<BirthdayDetailPageProps> = ({
             <button
               type="button"
               onClick={handleCopy}
-              className={`flex items-center justify-center gap-2 py-3 px-4 rounded-2xl font-extrabold text-xs sm:text-sm border transition-all active:scale-95 shadow-sm ${
+              className={`flex items-center justify-center gap-2 py-2.5 px-4 rounded-xl font-extrabold text-xs sm:text-sm border transition-all active:scale-95 shadow-xs ${
                 copied
                   ? 'bg-emerald-600 text-white border-emerald-600'
-                  : 'bg-white hover:bg-warm-50 text-slate-800 border-warm-300'
+                  : 'bg-white hover:bg-slate-50 text-slate-800 border-slate-200'
               }`}
             >
               {copied ? (
@@ -592,7 +608,7 @@ export const BirthdayDetailPage: React.FC<BirthdayDetailPageProps> = ({
             <button
               type="button"
               onClick={handleShare}
-              className="flex items-center justify-center gap-2 py-3 px-4 rounded-2xl font-extrabold text-xs sm:text-sm bg-white hover:bg-warm-50 text-slate-800 border border-warm-300 transition-all active:scale-95 shadow-sm"
+              className="flex items-center justify-center gap-2 py-2.5 px-4 rounded-xl font-extrabold text-xs sm:text-sm bg-white hover:bg-slate-50 text-slate-800 border border-slate-200 transition-all active:scale-95 shadow-xs"
             >
               <Share2 className="w-4 h-4 text-blue-600" />
               <span>Share...</span>
@@ -602,7 +618,7 @@ export const BirthdayDetailPage: React.FC<BirthdayDetailPageProps> = ({
             <button
               type="button"
               onClick={handleSendSMS}
-              className="flex items-center justify-center gap-2 py-3 px-4 rounded-2xl font-extrabold text-xs sm:text-sm bg-white hover:bg-warm-50 text-slate-800 border border-warm-300 transition-all active:scale-95 shadow-sm"
+              className="flex items-center justify-center gap-2 py-2.5 px-4 rounded-xl font-extrabold text-xs sm:text-sm bg-white hover:bg-slate-50 text-slate-800 border border-slate-200 transition-all active:scale-95 shadow-xs"
             >
               <Send className="w-4 h-4 text-amber-600" />
               <span>Send via SMS 💬</span>
@@ -615,8 +631,11 @@ export const BirthdayDetailPage: React.FC<BirthdayDetailPageProps> = ({
       <div className="pt-2 pb-6 flex items-center justify-center">
         <button
           type="button"
-          onClick={onBack}
-          className="inline-flex items-center gap-2 px-6 py-3 rounded-2xl bg-white hover:bg-warm-100 text-slate-700 hover:text-slate-900 border border-warm-200/90 text-xs sm:text-sm font-bold shadow-sm transition-all active:scale-95 group"
+          onClick={() => {
+            triggerHaptic('light');
+            onBack();
+          }}
+          className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-white hover:bg-slate-50 text-slate-700 hover:text-slate-900 border border-slate-200 text-xs sm:text-sm font-bold shadow-xs transition-all active:scale-95 group"
         >
           <ArrowLeft className="w-4 h-4 text-slate-500 group-hover:-translate-x-0.5 transition-transform" />
           <span>Back to All Birthdays</span>

@@ -3,6 +3,7 @@ import { X, User, Calendar, MessageSquare, AlertCircle, Check, ArrowLeft, Loader
 import { Person, PersonInput, RelationshipType } from '../types';
 import { fireBirthdayConfetti } from '../utils/confetti';
 import { parseBirthday } from '../utils/dateUtils';
+import { triggerHaptic } from '../utils/hapticsService';
 
 interface EditPersonModalProps {
   person: Person | null;
@@ -211,6 +212,7 @@ export const EditPersonModal: React.FC<EditPersonModalProps> = ({
 
       // Celebration burst on edit save
       fireBirthdayConfetti();
+      triggerHaptic('success');
 
       onClose();
     } catch (err: any) {

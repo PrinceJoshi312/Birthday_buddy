@@ -3,6 +3,7 @@ import { X, User, Calendar, MessageSquare, AlertCircle, Sparkles, Check, ArrowLe
 import { PersonInput, RelationshipType } from '../types';
 import { fireBirthdayConfetti } from '../utils/confetti';
 import { parseBirthday } from '../utils/dateUtils';
+import { triggerHaptic } from '../utils/hapticsService';
 
 interface AddPersonModalProps {
   isOpen: boolean;
@@ -169,8 +170,9 @@ export const AddPersonModal: React.FC<AddPersonModalProps> = ({
         reminder_time: reminderTime || '09:00',
       });
 
-      // Celebration burst
+      // Celebration burst on save
       fireBirthdayConfetti();
+      triggerHaptic('success');
 
       // Reset form state
       setName('');
