@@ -226,10 +226,12 @@ export const BirthdayDetailPage: React.FC<BirthdayDetailPageProps> = ({
         <button
           type="button"
           onClick={onBack}
-          className="inline-flex items-center gap-2 px-3.5 sm:px-4 py-2 rounded-2xl bg-white hover:bg-warm-100 text-slate-800 hover:text-purple-700 border border-warm-300 text-xs sm:text-sm font-extrabold shadow-sm transition-all active:scale-95 group flex-shrink-0"
+          className="inline-flex items-center gap-2 px-3 sm:px-3.5 py-1.5 sm:py-2 rounded-2xl bg-white hover:bg-purple-50/60 text-slate-700 hover:text-purple-900 border border-purple-200/80 hover:border-purple-300 shadow-soft hover:shadow-soft-hover text-xs sm:text-sm font-extrabold transition-all duration-150 active:scale-95 group flex-shrink-0"
         >
-          <ArrowLeft className="w-4 h-4 text-slate-700 group-hover:text-purple-700 group-hover:-translate-x-0.5 transition-transform" />
-          <span>← Back to Birthdays</span>
+          <span className="w-5 h-5 sm:w-6 sm:h-6 rounded-xl bg-purple-100 text-purple-700 flex items-center justify-center group-hover:bg-purple-600 group-hover:text-white transition-colors duration-150 flex-shrink-0">
+            <ArrowLeft className="w-3.5 h-3.5 group-hover:-translate-x-0.5 transition-transform" />
+          </span>
+          <span>Back to Birthdays</span>
         </button>
 
         {/* Action icons: Edit & Delete */}
