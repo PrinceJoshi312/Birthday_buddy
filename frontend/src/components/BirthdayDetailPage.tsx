@@ -226,14 +226,14 @@ export const BirthdayDetailPage: React.FC<BirthdayDetailPageProps> = ({
         <button
           type="button"
           onClick={onBack}
-          className="inline-flex items-center gap-2 px-4 py-2 rounded-2xl bg-white hover:bg-warm-100 text-slate-800 hover:text-purple-700 border border-warm-300 text-xs sm:text-sm font-extrabold shadow-sm transition-all active:scale-95 group"
+          className="inline-flex items-center gap-2 px-3.5 sm:px-4 py-2 rounded-2xl bg-white hover:bg-warm-100 text-slate-800 hover:text-purple-700 border border-warm-300 text-xs sm:text-sm font-extrabold shadow-sm transition-all active:scale-95 group flex-shrink-0"
         >
           <ArrowLeft className="w-4 h-4 text-slate-700 group-hover:text-purple-700 group-hover:-translate-x-0.5 transition-transform" />
           <span>← Back to Birthdays</span>
         </button>
 
         {/* Action icons: Edit & Delete */}
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-2 flex-shrink-0">
           {/* Edit Action Button */}
           <button
             type="button"
@@ -259,24 +259,24 @@ export const BirthdayDetailPage: React.FC<BirthdayDetailPageProps> = ({
       </div>
 
       {/* SPOTLIGHT HERO CARD */}
-      <div className="relative overflow-hidden rounded-3xl bg-gradient-to-br from-purple-900 via-purple-950 to-slate-900 text-white p-6 sm:p-10 shadow-soft-hover border border-purple-700/40">
+      <div className="relative overflow-hidden rounded-3xl bg-gradient-to-br from-purple-900 via-purple-950 to-slate-900 text-white p-5 sm:p-10 shadow-soft-hover border border-purple-700/40">
         <div className="absolute top-0 right-0 w-80 h-80 bg-pink-500/20 rounded-full blur-3xl pointer-events-none"></div>
         <div className="absolute bottom-0 left-1/3 w-72 h-72 bg-amber-500/15 rounded-full blur-3xl pointer-events-none"></div>
 
-        <div className="relative z-10 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-6">
-          <div className="flex items-center gap-5">
-            <div className="relative">
-              <div className="w-20 h-20 sm:w-24 sm:h-24 rounded-3xl bg-gradient-to-tr from-amber-400 via-pink-500 to-purple-600 flex items-center justify-center text-white font-black text-3xl sm:text-4xl shadow-glow-festive border-2 border-white/30">
+        <div className="relative z-10 flex flex-col lg:flex-row lg:items-center justify-between gap-5 sm:gap-6">
+          <div className="flex flex-row items-center gap-4 sm:gap-5 min-w-0">
+            <div className="relative flex-shrink-0">
+              <div className="w-16 h-16 sm:w-24 sm:h-24 rounded-3xl bg-gradient-to-tr from-amber-400 via-pink-500 to-purple-600 flex items-center justify-center text-white font-black text-2xl sm:text-4xl shadow-glow-festive border-2 border-white/30">
                 {firstLetter}
               </div>
               {isToday && (
-                <span className="absolute -top-2 -right-2 text-2xl animate-bounce">
+                <span className="absolute -top-2 -right-2 text-xl sm:text-2xl animate-bounce">
                   👑
                 </span>
               )}
             </div>
 
-            <div>
+            <div className="space-y-1 min-w-0 flex-1">
               <div className="flex flex-wrap items-center gap-2 mb-1">
                 <span className="px-2.5 py-0.5 rounded-full text-xs font-semibold bg-purple-800/80 text-purple-200 border border-purple-700/50">
                   {currentPerson.relationship}
@@ -288,14 +288,14 @@ export const BirthdayDetailPage: React.FC<BirthdayDetailPageProps> = ({
                 )}
               </div>
 
-              <h1 className="text-2xl sm:text-4xl font-black tracking-tight text-white flex items-center gap-2">
+              <h1 className="text-xl sm:text-4xl font-black tracking-tight text-white flex items-center gap-2 truncate">
                 <span>{currentPerson.name}</span>
                 {isToday && <span>🎉</span>}
               </h1>
 
-              <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-xs sm:text-sm text-purple-200/90 mt-1.5 font-medium">
+              <div className="flex flex-wrap items-center gap-x-2.5 gap-y-0.5 text-xs sm:text-sm text-purple-200/90 mt-1 font-medium">
                 <span className="flex items-center gap-1.5">
-                  <Calendar className="w-4 h-4 text-pink-400" />
+                  <Calendar className="w-4 h-4 text-pink-400 flex-shrink-0" />
                   {formatBirthdayDate(currentPerson.birthday)}
                 </span>
                 {age_turning ? (
@@ -308,21 +308,21 @@ export const BirthdayDetailPage: React.FC<BirthdayDetailPageProps> = ({
             </div>
           </div>
 
-          {/* Countdown badge / Big Callout & Celebrate button */}
-          <div className="flex sm:flex-col items-center sm:items-end justify-between w-full sm:w-auto gap-3 pt-3 sm:pt-0 border-t border-purple-800/60 sm:border-none">
-            <div className="text-left sm:text-right">
+          {/* Countdown badge & Celebrate button (fits cleanly inside card on all screen widths) */}
+          <div className="flex flex-row sm:flex-row lg:flex-col items-center sm:items-center lg:items-end justify-between w-full lg:w-auto gap-3 pt-3 lg:pt-0 border-t border-purple-800/60 lg:border-none">
+            <div className="text-left sm:text-right flex-shrink-0">
               {isToday ? (
-                <span className="text-2xl sm:text-3xl font-black text-transparent bg-clip-text bg-gradient-to-r from-amber-300 via-pink-400 to-rose-400 animate-pulse">
+                <span className="text-xl sm:text-3xl font-black text-transparent bg-clip-text bg-gradient-to-r from-amber-300 via-pink-400 to-rose-400 animate-pulse">
                   TODAY! 🎉
                 </span>
               ) : isTomorrow ? (
-                <span className="text-2xl sm:text-3xl font-black text-amber-300">
+                <span className="text-xl sm:text-3xl font-black text-amber-300">
                   TOMORROW!
                 </span>
               ) : (
                 <div className="flex items-baseline gap-1.5">
-                  <span className="text-3xl sm:text-4xl font-black text-white">{daysRemaining}</span>
-                  <span className="text-sm font-bold text-amber-300 uppercase">Days Left</span>
+                  <span className="text-2xl sm:text-4xl font-black text-white">{daysRemaining}</span>
+                  <span className="text-xs sm:text-sm font-bold text-amber-300 uppercase">Days Left</span>
                 </div>
               )}
             </div>
@@ -330,9 +330,9 @@ export const BirthdayDetailPage: React.FC<BirthdayDetailPageProps> = ({
             <button
               type="button"
               onClick={() => triggerCelebration()}
-              className="px-4 py-2 rounded-2xl bg-amber-400 hover:bg-amber-300 text-slate-900 font-extrabold text-xs shadow-md transition-all active:scale-95 flex items-center gap-1.5"
+              className="inline-flex items-center justify-center gap-1.5 px-4 py-2.5 rounded-2xl bg-amber-400 hover:bg-amber-300 text-slate-900 font-extrabold text-xs sm:text-sm shadow-md transition-all active:scale-95 flex-shrink-0 whitespace-nowrap"
             >
-              <PartyPopper className="w-4 h-4" />
+              <PartyPopper className="w-4 h-4 flex-shrink-0" />
               <span>Celebrate!</span>
             </button>
           </div>
@@ -340,7 +340,7 @@ export const BirthdayDetailPage: React.FC<BirthdayDetailPageProps> = ({
 
         {/* Notes callout if available */}
         {currentPerson.notes && (
-          <div className="relative z-10 mt-6 pt-4 border-t border-purple-800/60 text-xs sm:text-sm text-purple-200/90 italic">
+          <div className="relative z-10 mt-5 pt-3.5 border-t border-purple-800/60 text-xs sm:text-sm text-purple-200/90 italic">
             "{currentPerson.notes}"
           </div>
         )}
