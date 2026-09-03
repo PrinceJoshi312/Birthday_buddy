@@ -200,7 +200,28 @@ export const AddPersonModal: React.FC<AddPersonModalProps> = ({
     <div className="fixed inset-0 z-50 overflow-y-auto bg-slate-950/60 backdrop-blur-sm flex items-center justify-center p-3 sm:p-6 transition-opacity">
       <div className="relative w-full max-w-xl bg-white rounded-3xl shadow-2xl border border-warm-200/90 overflow-hidden transform transition-all animate-in fade-in zoom-in-95 duration-200 my-8">
         {/* Header */}
-        <div className="px-6 sm:px-8 pt-6 pb-5 bg-gradient-to-r from-purple-100/80 via-pink-100/70 to-amber-100/80 border-b border-warm-200/80 flex items-center justify-between">
+        <div className="px-5 sm:px-8 pt-5 pb-5 bg-gradient-to-r from-purple-100/80 via-pink-100/70 to-amber-100/80 border-b border-warm-200/80">
+          <div className="flex items-center justify-between gap-2 mb-3">
+            <button
+              type="button"
+              onClick={onClose}
+              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-white/90 hover:bg-white text-slate-700 hover:text-purple-700 border border-warm-200/80 text-xs font-extrabold shadow-xs active:scale-95 transition-all"
+              aria-label="Back"
+            >
+              <ArrowLeft className="w-4 h-4 text-purple-600" />
+              <span>Back</span>
+            </button>
+
+            <button
+              type="button"
+              onClick={onClose}
+              className="w-8 h-8 rounded-xl bg-white/80 hover:bg-white text-slate-400 hover:text-slate-700 flex items-center justify-center transition-colors shadow-xs active:scale-95"
+              aria-label="Close"
+            >
+              <X className="w-4 h-4" />
+            </button>
+          </div>
+
           <div>
             <div className="flex items-center gap-2">
               <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[11px] font-extrabold uppercase tracking-wider bg-purple-600 text-white shadow-sm">
@@ -210,19 +231,10 @@ export const AddPersonModal: React.FC<AddPersonModalProps> = ({
             <h2 className="text-xl sm:text-2xl font-black text-slate-800 tracking-tight mt-1">
               Add a Birthday 🎂
             </h2>
-            <p className="text-xs text-slate-500 font-medium">
+            <p className="text-xs text-slate-500 font-medium mt-0.5">
               We'll calculate countdowns and remind you so you never forget!
             </p>
           </div>
-
-          <button
-            type="button"
-            onClick={onClose}
-            className="w-9 h-9 rounded-2xl bg-white/80 hover:bg-white text-slate-400 hover:text-slate-700 flex items-center justify-center transition-colors shadow-sm active:scale-95"
-            aria-label="Close"
-          >
-            <X className="w-5 h-5" />
-          </button>
         </div>
 
         {/* API Error Alert */}

@@ -18,6 +18,8 @@ import { Person, PersonInput } from '../types';
 import { formatBirthdayDate, getCountdownBadge, getZodiacSign } from '../utils/dateUtils';
 import { getRandomMessage, MessageStyle, MESSAGE_STYLES } from '../utils/messageTemplates';
 import { triggerCelebration } from '../utils/celebrationService';
+import { shareBirthdayWish } from '../utils/shareService';
+import { triggerHaptic } from '../utils/hapticsService';
 import { EditPersonModal } from './EditPersonModal';
 import { pushNav, popNav } from '../utils/navigation';
 
@@ -153,17 +155,16 @@ export const BirthdayDetailPage: React.FC<BirthdayDetailPageProps> = ({
   };
 
   const handleShare = async () => {
-    if (navigator.share) {
-      try {
-        await navigator.share({
-          title: `Birthday wish for ${currentPerson.name}`,
-          text: generatedMessage,
-        });
-      } catch (err) {
-        // User cancelled share
-      }
-    } else {
-      handleCopy();
+    triggerHaptic('light');
+    const res = await shareBirthdayWish({
+      title: `Birthday wish for ${currentPerson.name} 🎂`,
+      text: generatedMessage,
+      dialogTitle: `Share Wish for ${currentPerson.name}`,
+    });
+    if (res.method === 'clipboard' && res.shared) {
+      setCopied(true);
+      showToast('Wish copied to clipboard! 📋');
+      setTimeout(() => setCopied(false), 2500);
     }
   };
 
@@ -221,8 +222,11 @@ export const BirthdayDetailPage: React.FC<BirthdayDetailPageProps> = ({
         </div>
       )}
 
-      {/* STICKY TOP NAVIGATION / ACTION BAR */}
-      <div className="sticky top-14 sm:top-16 z-20 w-full py-2.5 bg-[#FAF8F5]/95 backdrop-blur-md border-b border-warm-200/70 flex items-center justify-between gap-3 shadow-xs transition-all mb-2">
+      {/* STATIONARY TOP NAVIGATION / ACTION BAR */}
+      <div 
+        className="sticky top-0 z-30 w-full py-2.5 px-1 bg-[#FAF8F5]/95 backdrop-blur-md border-b border-warm-200/80 flex items-center justify-between gap-2 shadow-xs transition-all mb-4"
+        style={{ paddingTop: 'calc(0.625rem + env(safe-area-inset-top, 0px))' }}
+      >
         <button
           type="button"
           onClick={onBack}

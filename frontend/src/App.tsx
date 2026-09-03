@@ -1,5 +1,6 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { CheckCircle2, PartyPopper, Calendar, Clock } from 'lucide-react';
+import { App as CapacitorApp } from '@capacitor/app';
 import { Person, PersonInput } from './types';
 import { fetchUpcomingBirthdays, createPerson, updatePerson, deletePerson } from './api';
 import { Header } from './components/Header';
@@ -13,25 +14,75 @@ import { EmptyState } from './components/EmptyState';
 import { LoadingSkeleton } from './components/LoadingSkeleton';
 import { ErrorState } from './components/ErrorState';
 import { BottomNav } from './components/BottomNav';
+import { BuddiesScreen } from './components/BuddiesScreen';
+import { NotificationPermissionDialog } from './components/NotificationPermissionDialog';
+import { ReminderSetupDialog } from './components/ReminderSetupDialog';
 import { checkAndSendBirthdayReminders } from './utils/notificationService';
 import { initHistoryState, pushNav, popNav, AppNavState } from './utils/navigation';
+import { initStatusBar } from './utils/statusBarService';
+import { 
+  checkNotificationPermission, 
+  requestNotificationPermission, 
+  schedulePersonBirthdayReminders 
+} from './utils/localNotificationsService';
 
 export function App() {
   const [people, setPeople] = useState<Person[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string>('');
 
+  // Active Bottom Navigation View ('home' | 'buddies')
+  const [activeTab, setActiveTab] = useState<'home' | 'buddies'>('home');
+
   // Toast feedback state
   const [toastMessage, setToastMessage] = useState<string | null>(null);
 
-  // Search & Filter state
+  // Search & Filter state for Home screen
   const [searchQuery, setSearchQuery] = useState<string>('');
   const [selectedCategory, setSelectedCategory] = useState<string>('All');
 
-  // Modals & Navigation
+  // Modals & Screen Navigation
   const [isAddModalOpen, setIsAddModalOpen] = useState<boolean>(false);
   const [isSettingsOpen, setIsSettingsOpen] = useState<boolean>(false);
   const [selectedDetailPerson, setSelectedDetailPerson] = useState<Person | null>(null);
+
+  // Post-Add Notification & Reminder Dialog States
+  const [isNotificationPermissionOpen, setIsNotificationPermissionOpen] = useState<boolean>(false);
+  const [isReminderSetupOpen, setIsReminderSetupOpen] = useState<boolean>(false);
+  const [newlyAddedPerson, setNewlyAddedPerson] = useState<Person | null>(null);
+
+  // State Refs for Android Back Button Listener (avoids stale closures and competing listeners)
+  const activeTabRef = useRef<'home' | 'buddies'>('home');
+  const selectedDetailPersonRef = useRef<Person | null>(null);
+  const isAddModalOpenRef = useRef(false);
+  const isSettingsOpenRef = useRef(false);
+  const isNotificationPermissionOpenRef = useRef(false);
+  const isReminderSetupOpenRef = useRef(false);
+  const lastBackPressRef = useRef<number>(0);
+
+  useEffect(() => {
+    activeTabRef.current = activeTab;
+  }, [activeTab]);
+
+  useEffect(() => {
+    selectedDetailPersonRef.current = selectedDetailPerson;
+  }, [selectedDetailPerson]);
+
+  useEffect(() => {
+    isAddModalOpenRef.current = isAddModalOpen;
+  }, [isAddModalOpen]);
+
+  useEffect(() => {
+    isSettingsOpenRef.current = isSettingsOpen;
+  }, [isSettingsOpen]);
+
+  useEffect(() => {
+    isNotificationPermissionOpenRef.current = isNotificationPermissionOpen;
+  }, [isNotificationPermissionOpen]);
+
+  useEffect(() => {
+    isReminderSetupOpenRef.current = isReminderSetupOpen;
+  }, [isReminderSetupOpen]);
 
   // Load upcoming birthdays from local IndexedDB
   const loadUpcomingBirthdays = async () => {
@@ -52,12 +103,63 @@ export function App() {
     }
   };
 
-  // Initial load & History setup
+  // Toast Feedback Helper
+  const showToast = (message: string) => {
+    setToastMessage(message);
+    setTimeout(() => {
+      setToastMessage(null);
+    }, 3000);
+  };
+
+  // Initial load, Safe Area, History & Capacitor Back Button setup
   useEffect(() => {
     loadUpcomingBirthdays();
     initHistoryState();
+    initStatusBar();
 
-    // Listen to Android & browser hardware back actions
+    // 1. Unified Capacitor Native Android Back Button & Back Gesture listener
+    const backListenerPromise = CapacitorApp.addListener('backButton', () => {
+      // Priority 1: Reminder Setup Dialog
+      if (isReminderSetupOpenRef.current) {
+        setIsReminderSetupOpen(false);
+        return;
+      }
+      // Priority 2: Notification Permission Dialog
+      if (isNotificationPermissionOpenRef.current) {
+        setIsNotificationPermissionOpen(false);
+        return;
+      }
+      // Priority 3: Add Person Modal
+      if (isAddModalOpenRef.current) {
+        setIsAddModalOpen(false);
+        return;
+      }
+      // Priority 4: Settings Modal
+      if (isSettingsOpenRef.current) {
+        setIsSettingsOpen(false);
+        return;
+      }
+      // Priority 5: Birthday Detail View -> return to Home / Buddies
+      if (selectedDetailPersonRef.current) {
+        setSelectedDetailPerson(null);
+        return;
+      }
+      // Priority 6: Buddies Screen -> return to Home
+      if (activeTabRef.current === 'buddies') {
+        setActiveTab('home');
+        return;
+      }
+      // Priority 7: Home / Root Screen -> 2-press back exit window (2000ms)
+      const now = Date.now();
+      if (now - lastBackPressRef.current < 2000) {
+        CapacitorApp.exitApp();
+      } else {
+        lastBackPressRef.current = now;
+        showToast('Press back again to exit');
+      }
+    });
+
+    // 2. Web browser popstate fallback
     const handlePopState = (event: PopStateEvent) => {
       const state = event.state as AppNavState | null;
 
@@ -78,7 +180,11 @@ export function App() {
     };
 
     window.addEventListener('popstate', handlePopState);
-    return () => window.removeEventListener('popstate', handlePopState);
+
+    return () => {
+      window.removeEventListener('popstate', handlePopState);
+      backListenerPromise.then((sub) => sub.remove()).catch(() => {});
+    };
   }, []);
 
   // Sync selected person if people list updates in background
@@ -90,14 +196,6 @@ export function App() {
       }
     }
   }, [people]);
-
-  // Toast Feedback Helper
-  const showToast = (message: string) => {
-    setToastMessage(message);
-    setTimeout(() => {
-      setToastMessage(null);
-    }, 3000);
-  };
 
   // Modal Open Handlers with History integration
   const handleOpenAddModal = () => {
@@ -132,18 +230,78 @@ export function App() {
     popNav();
   };
 
+  // Navigation tab switcher
+  const handleSelectTab = (tab: 'home' | 'buddies') => {
+    if (selectedDetailPerson) {
+      setSelectedDetailPerson(null);
+    }
+    setActiveTab(tab);
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
+
   // Data Handlers
   const handleAddPerson = async (data: PersonInput) => {
     const created = await createPerson(data);
     await loadUpcomingBirthdays();
     setIsAddModalOpen(false);
     popNav();
-    showToast(`🎉 Added ${created.name} to Birthday Buddy!`);
+
+    // Check notification permission flow
+    const currentPerm = await checkNotificationPermission();
+    if (currentPerm === 'granted') {
+      // Permission already granted: prompt reminder setup directly
+      setNewlyAddedPerson(created);
+      setIsReminderSetupOpen(true);
+    } else if (currentPerm !== 'denied') {
+      // First prompt friendly notification permission dialog
+      setNewlyAddedPerson(created);
+      setIsNotificationPermissionOpen(true);
+    } else {
+      // Denied or unsupported
+      showToast(`🎉 Added ${created.name} to Birthday Buddy!`);
+    }
+  };
+
+  // Post-Add Notification Permission Dialog Handlers
+  const handleAllowNotifications = async () => {
+    const status = await requestNotificationPermission();
+    setIsNotificationPermissionOpen(false);
+    if (status === 'granted' && newlyAddedPerson) {
+      // Next show reminder setup dialog
+      setIsReminderSetupOpen(true);
+    } else {
+      showToast('Notifications not enabled');
+    }
+  };
+
+  const handleNotNowNotifications = () => {
+    setIsNotificationPermissionOpen(false);
+    if (newlyAddedPerson) {
+      showToast(`🎉 Added ${newlyAddedPerson.name} to Birthday Buddy!`);
+    }
+  };
+
+  // Post-Permission Reminder Setup Dialog Handlers
+  const handleSetReminders = async () => {
+    if (newlyAddedPerson) {
+      await schedulePersonBirthdayReminders(newlyAddedPerson);
+      showToast(`🔔 Reminders active for ${newlyAddedPerson.name}!`);
+    }
+    setIsReminderSetupOpen(false);
+  };
+
+  const handleSkipReminders = () => {
+    setIsReminderSetupOpen(false);
+    if (newlyAddedPerson) {
+      showToast(`🎉 Added ${newlyAddedPerson.name} to Birthday Buddy!`);
+    }
   };
 
   const handleUpdatePerson = async (id: number, data: Partial<PersonInput>): Promise<Person> => {
     const updated = await updatePerson(id, data);
     await loadUpcomingBirthdays();
+    // Refresh scheduled notifications if reminders changed
+    await schedulePersonBirthdayReminders(updated);
     showToast(`🎉 Updated ${updated.name}'s details!`);
     return updated;
   };
@@ -203,39 +361,36 @@ export function App() {
     ];
 
     try {
-      setLoading(true);
       for (const p of samplePeople) {
         await createPerson(p);
       }
       await loadUpcomingBirthdays();
-      showToast('🎉 Loaded sample buddies successfully!');
-    } catch (err: any) {
-      setError(err.message || 'Failed to seed sample buddies');
-    } finally {
-      setLoading(false);
+      showToast('🎉 Loaded sample buddies!');
+    } catch {
+      showToast('Error seeding sample data.');
     }
   };
 
   const categories = ['All', 'Friend', 'Best Friend', 'Family', 'Partner', 'Colleague', 'Other'];
 
-  // Search & Filtered list
-  const filteredPeople = people.filter((p) => {
+  // Filtered people for Home screen
+  const filteredPeople = people.filter((person) => {
     const matchesSearch =
-      p.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      (p.notes && p.notes.toLowerCase().includes(searchQuery.toLowerCase()));
+      person.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      (person.notes && person.notes.toLowerCase().includes(searchQuery.toLowerCase()));
 
     const matchesCategory =
       selectedCategory.toLowerCase() === 'all' ||
-      (p.relationship && p.relationship.toLowerCase() === selectedCategory.toLowerCase());
+      (person.relationship && person.relationship.toLowerCase() === selectedCategory.toLowerCase());
 
     return matchesSearch && matchesCategory;
   });
 
-  // Action Stage Groupings
+  // Date-Stage Breakdown for Home screen
   const todayBirthdays = filteredPeople.filter((p) => (p.days_remaining ?? p.days_until ?? 999) === 0);
   const thisWeekBirthdays = filteredPeople.filter((p) => {
     const d = p.days_remaining ?? p.days_until ?? 999;
-    return d >= 1 && d <= 7;
+    return d > 0 && d <= 7;
   });
   const comingUpBirthdays = filteredPeople.filter((p) => (p.days_remaining ?? p.days_until ?? 999) > 7);
 
@@ -254,12 +409,14 @@ export function App() {
         </div>
       )}
 
-      {/* Header */}
-      <Header
-        onOpenAddModal={handleOpenAddModal}
-        onOpenSettings={handleOpenSettings}
-        totalCount={people.length}
-      />
+      {/* Header (rendered on Home & Buddies views, hidden on Birthday Detail to give Back bar priority) */}
+      {!selectedDetailPerson && (
+        <Header
+          onOpenAddModal={handleOpenAddModal}
+          onOpenSettings={handleOpenSettings}
+          totalCount={people.length}
+        />
+      )}
 
       {/* Main Content */}
       <main className="flex-1 max-w-6xl w-full mx-auto px-4 sm:px-8 py-6 sm:py-8">
@@ -274,7 +431,17 @@ export function App() {
           <LoadingSkeleton />
         ) : error ? (
           <ErrorState message={error} onRetry={loadUpcomingBirthdays} />
+        ) : activeTab === 'buddies' ? (
+          /* DEDICATED BUDDIES SCREEN */
+          <BuddiesScreen
+            people={people}
+            onViewBirthday={handleOpenDetail}
+            onDelete={handleDeletePerson}
+            onOpenAddModal={handleOpenAddModal}
+            onSeedSampleData={handleSeedSampleData}
+          />
         ) : (
+          /* HOME DASHBOARD SCREEN */
           <>
             {/* Top Spotlight Hero (if there are people and no active filter) */}
             {!searchQuery && selectedCategory.toLowerCase() === 'all' && (
@@ -454,6 +621,8 @@ export function App() {
 
       {/* Mobile Bottom Navigation */}
       <BottomNav
+        activeTab={activeTab}
+        onSelectTab={handleSelectTab}
         onOpenAddModal={handleOpenAddModal}
         totalCount={people.length}
       />
@@ -463,6 +632,21 @@ export function App() {
         isOpen={isAddModalOpen}
         onClose={handleCloseAddModal}
         onSubmit={handleAddPerson}
+      />
+
+      {/* Post-Add Friendly Notification Permission Dialog */}
+      <NotificationPermissionDialog
+        isOpen={isNotificationPermissionOpen}
+        onAllow={handleAllowNotifications}
+        onNotNow={handleNotNowNotifications}
+      />
+
+      {/* Post-Permission Friendly Reminder Setup Dialog */}
+      <ReminderSetupDialog
+        isOpen={isReminderSetupOpen}
+        person={newlyAddedPerson}
+        onSetReminders={handleSetReminders}
+        onSkip={handleSkipReminders}
       />
 
       {/* Settings Modal (Notifications, Preferences & Data Backup) */}

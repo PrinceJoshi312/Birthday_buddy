@@ -2,23 +2,26 @@ import React from 'react';
 import { Home, Plus, Users } from 'lucide-react';
 
 interface BottomNavProps {
+  activeTab: 'home' | 'buddies';
+  onSelectTab: (tab: 'home' | 'buddies') => void;
   onOpenAddModal: () => void;
   totalCount?: number;
 }
 
 export const BottomNav: React.FC<BottomNavProps> = ({
+  activeTab,
+  onSelectTab,
   onOpenAddModal,
   totalCount = 0,
 }) => {
-  const handleScrollHome = () => {
+  const handleHomeClick = () => {
+    onSelectTab('home');
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
-  const handleScrollBuddies = () => {
-    const el = document.getElementById('buddies-list');
-    if (el) {
-      el.scrollIntoView({ behavior: 'smooth', block: 'start' });
-    }
+  const handleBuddiesClick = () => {
+    onSelectTab('buddies');
+    window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
   return (
@@ -27,13 +30,17 @@ export const BottomNav: React.FC<BottomNavProps> = ({
       style={{ paddingBottom: 'calc(0.625rem + env(safe-area-inset-bottom, 0px))' }}
     >
       <div className="grid grid-cols-3 items-center w-full max-w-md mx-auto pt-2.5 px-4">
-        {/* Left: Home */}
+        {/* Left: Home Navigation Tab */}
         <button
           type="button"
-          onClick={handleScrollHome}
-          className="flex flex-col items-center justify-center gap-1 text-purple-700 font-bold text-[10px] active:scale-95 transition-transform"
+          onClick={handleHomeClick}
+          className={`flex flex-col items-center justify-center gap-1 text-[10px] active:scale-95 transition-all ${
+            activeTab === 'home'
+              ? 'text-purple-700 font-extrabold'
+              : 'text-slate-500 hover:text-purple-700 font-medium'
+          }`}
         >
-          <Home className="w-5 h-5" />
+          <Home className={`w-5 h-5 ${activeTab === 'home' ? 'stroke-[2.5]' : ''}`} />
           <span>Home</span>
         </button>
 
@@ -50,14 +57,18 @@ export const BottomNav: React.FC<BottomNavProps> = ({
           </button>
         </div>
 
-        {/* Right: Buddies (Smooth scroll to birthday list) */}
+        {/* Right: Dedicated Buddies Screen Tab */}
         <button
           type="button"
-          onClick={handleScrollBuddies}
-          className="flex flex-col items-center justify-center gap-1 text-slate-500 hover:text-purple-700 font-semibold text-[10px] active:scale-95 transition-transform"
+          onClick={handleBuddiesClick}
+          className={`flex flex-col items-center justify-center gap-1 text-[10px] active:scale-95 transition-all ${
+            activeTab === 'buddies'
+              ? 'text-purple-700 font-extrabold'
+              : 'text-slate-500 hover:text-purple-700 font-medium'
+          }`}
         >
-          <Users className="w-5 h-5 text-slate-400" />
-          <span>{totalCount} {totalCount === 1 ? 'Buddy' : 'Buddies'}</span>
+          <Users className={`w-5 h-5 ${activeTab === 'buddies' ? 'stroke-[2.5]' : ''}`} />
+          <span>Buddies</span>
         </button>
       </div>
     </nav>

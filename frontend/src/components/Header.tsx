@@ -13,7 +13,10 @@ export const Header: React.FC<HeaderProps> = ({
   totalCount = 0,
 }) => {
   return (
-    <header className="sticky top-0 z-30 bg-[#FAF8F5]/90 backdrop-blur-md border-b border-warm-200/70 px-3 sm:px-8 py-3 transition-all">
+    <header 
+      className="sticky top-0 z-30 bg-[#FAF8F5]/90 backdrop-blur-md border-b border-warm-200/70 px-3 sm:px-8 pb-3 transition-all"
+      style={{ paddingTop: 'calc(0.75rem + env(safe-area-inset-top, 0px))' }}
+    >
       <div className="max-w-6xl mx-auto flex items-center justify-between gap-2 sm:gap-4">
         {/* Logo & Subtitle */}
         <div className="flex items-center gap-2.5 sm:gap-3.5 min-w-0">
