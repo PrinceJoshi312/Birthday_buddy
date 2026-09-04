@@ -1,4 +1,4 @@
-import { LocalNotifications, ScheduleOptions, PermissionStatus } from '@capacitor/local-notifications';
+import { LocalNotifications, PermissionStatus } from '@capacitor/local-notifications';
 import { Capacitor } from '@capacitor/core';
 import { Person } from '../types';
 import { parseBirthday } from './dateUtils';
@@ -6,54 +6,38 @@ import { parseBirthday } from './dateUtils';
 export type NotificationStatus = 'granted' | 'denied' | 'prompt' | 'unsupported';
 
 /**
- * Checks if notification permission is currently granted
+ * Checks if notification permission is currently granted on native platform.
+ * Returns 'unsupported' immediately if running in a standard web browser.
  */
 export async function checkNotificationPermission(): Promise<NotificationStatus> {
-  if (Capacitor.isNativePlatform()) {
-    try {
-      const status: PermissionStatus = await LocalNotifications.checkPermissions();
-      return status.display as NotificationStatus;
-    } catch {
-      return 'prompt';
-    }
+  if (!Capacitor.isNativePlatform()) {
+    return 'unsupported';
   }
 
-  // Web Browser fallback
-  if (typeof window !== 'undefined' && 'Notification' in window) {
-    const perm = Notification.permission;
-    if (perm === 'granted') return 'granted';
-    if (perm === 'denied') return 'denied';
+  try {
+    const status: PermissionStatus = await LocalNotifications.checkPermissions();
+    return status.display as NotificationStatus;
+  } catch {
     return 'prompt';
   }
-
-  return 'unsupported';
 }
 
 /**
- * Requests notification permission from the user
+ * Requests notification permission from the user on native platform.
+ * Returns 'unsupported' immediately if running in a standard web browser.
  */
 export async function requestNotificationPermission(): Promise<NotificationStatus> {
-  if (Capacitor.isNativePlatform()) {
-    try {
-      const status = await LocalNotifications.requestPermissions();
-      return status.display as NotificationStatus;
-    } catch (err) {
-      console.warn('Error requesting local notification permission:', err);
-      return 'denied';
-    }
+  if (!Capacitor.isNativePlatform()) {
+    return 'unsupported';
   }
 
-  // Web Browser fallback
-  if (typeof window !== 'undefined' && 'Notification' in window) {
-    try {
-      const res = await Notification.requestPermission();
-      return (res === 'granted' ? 'granted' : res === 'denied' ? 'denied' : 'prompt');
-    } catch {
-      return 'denied';
-    }
+  try {
+    const status = await LocalNotifications.requestPermissions();
+    return status.display as NotificationStatus;
+  } catch (err) {
+    console.warn('Error requesting local notification permission:', err);
+    return 'denied';
   }
-
-  return 'unsupported';
 }
 
 /**
@@ -67,12 +51,12 @@ function getNotificationId(personId: number, offsetDays: number): number {
 /**
  * Schedules local birthday reminders for a given person based on their reminder preferences.
  * Updates any previously scheduled reminders for this person to prevent duplicates.
+ * Only runs on Capacitor native Android/iOS platform.
  */
 export async function schedulePersonBirthdayReminders(person: Person): Promise<number> {
   if (!person || !person.id || !person.birthday) return 0;
 
   if (!Capacitor.isNativePlatform()) {
-    // In web mode, reminders are checked upon app load via notificationService.ts
     return 0;
   }
 

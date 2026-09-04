@@ -197,15 +197,23 @@ export const AddPersonModal: React.FC<AddPersonModalProps> = ({
   const maxDays = getDaysInMonth(selectedMonth);
 
   return (
-    <div className="fixed inset-0 z-50 overflow-y-auto bg-slate-950/60 backdrop-blur-sm flex items-center justify-center p-3 sm:p-6 transition-opacity">
-      <div className="relative w-full max-w-xl bg-white rounded-3xl shadow-2xl border border-warm-200/90 overflow-hidden transform transition-all animate-in fade-in zoom-in-95 duration-200 my-8">
-        {/* Header */}
-        <div className="px-5 sm:px-8 pt-5 pb-5 bg-gradient-to-r from-purple-100/80 via-pink-100/70 to-amber-100/80 border-b border-warm-200/80">
-          <div className="flex items-center justify-between gap-2 mb-3">
+    <div 
+      className="fixed inset-0 z-50 overflow-y-auto bg-slate-950/60 backdrop-blur-sm flex justify-center items-start sm:items-center p-0 sm:p-4 transition-opacity"
+      style={{
+        paddingTop: 'env(safe-area-inset-top, 0px)',
+        paddingBottom: 'env(safe-area-inset-bottom, 0px)',
+      }}
+    >
+      <div className="relative w-full max-w-xl bg-white rounded-t-3xl sm:rounded-3xl shadow-2xl border-0 sm:border sm:border-warm-200/90 overflow-hidden transform transition-all animate-in fade-in zoom-in-95 duration-200 min-h-screen sm:min-h-0 sm:my-6 flex flex-col max-h-[100dvh] sm:max-h-[90vh]">
+        {/* Sticky/Pinned Modal Header */}
+        <div 
+          className="sticky top-0 z-20 px-5 sm:px-8 pt-4 pb-4 bg-gradient-to-r from-purple-100/95 via-pink-100/85 to-amber-100/95 border-b border-warm-200/80 backdrop-blur-md flex-shrink-0"
+        >
+          <div className="flex items-center justify-between gap-2 mb-2">
             <button
               type="button"
               onClick={onClose}
-              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-white/90 hover:bg-white text-slate-700 hover:text-purple-700 border border-warm-200/80 text-xs font-extrabold shadow-xs active:scale-95 transition-all"
+              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-white/95 hover:bg-white text-slate-700 hover:text-purple-700 border border-warm-300/80 text-xs font-extrabold shadow-xs active:scale-95 transition-all"
               aria-label="Back"
             >
               <ArrowLeft className="w-4 h-4 text-purple-600" />
@@ -215,7 +223,7 @@ export const AddPersonModal: React.FC<AddPersonModalProps> = ({
             <button
               type="button"
               onClick={onClose}
-              className="w-8 h-8 rounded-xl bg-white/80 hover:bg-white text-slate-400 hover:text-slate-700 flex items-center justify-center transition-colors shadow-xs active:scale-95"
+              className="w-8 h-8 rounded-xl bg-white/95 hover:bg-white text-slate-400 hover:text-slate-700 flex items-center justify-center transition-colors shadow-xs active:scale-95"
               aria-label="Close"
             >
               <X className="w-4 h-4" />
@@ -237,16 +245,18 @@ export const AddPersonModal: React.FC<AddPersonModalProps> = ({
           </div>
         </div>
 
-        {/* API Error Alert */}
-        {apiError && (
-          <div className="mx-6 sm:mx-8 mt-5 p-3.5 bg-rose-50 border border-rose-200 text-rose-700 text-xs font-semibold rounded-2xl flex items-center gap-2">
-            <AlertCircle className="w-4 h-4 flex-shrink-0" />
-            <span>{apiError}</span>
-          </div>
-        )}
+        {/* Scrollable Form Body Container */}
+        <div className="overflow-y-auto flex-1 p-5 sm:p-8">
+          {/* API Error Alert */}
+          {apiError && (
+            <div className="mb-5 p-3.5 bg-rose-50 border border-rose-200 text-rose-700 text-xs font-semibold rounded-2xl flex items-center gap-2">
+              <AlertCircle className="w-4 h-4 flex-shrink-0" />
+              <span>{apiError}</span>
+            </div>
+          )}
 
-        {/* Form Body */}
-        <form onSubmit={handleSubmit} noValidate className="p-6 sm:p-8 space-y-6">
+          {/* Form Body */}
+          <form onSubmit={handleSubmit} noValidate className="space-y-6">
           {/* Row 1: Name and Birthday Date / Month & Day */}
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-5">
             {/* Name Input */}
@@ -488,6 +498,7 @@ export const AddPersonModal: React.FC<AddPersonModalProps> = ({
             </button>
           </div>
         </form>
+        </div>
       </div>
     </div>
   );

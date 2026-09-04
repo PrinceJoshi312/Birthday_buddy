@@ -1,12 +1,12 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { CheckCircle2, PartyPopper, Calendar, Clock } from 'lucide-react';
+import { CheckCircle2, PartyPopper, Calendar, Clock, Users, ChevronRight } from 'lucide-react';
 import { App as CapacitorApp } from '@capacitor/app';
+import { Capacitor } from '@capacitor/core';
 import { Person, PersonInput } from './types';
 import { fetchUpcomingBirthdays, createPerson, updatePerson, deletePerson } from './api';
 import { Header } from './components/Header';
 import { BirthdayHero } from './components/BirthdayHero';
 import { BirthdayCard } from './components/BirthdayCard';
-import { SearchBar } from './components/SearchBar';
 import { AddPersonModal } from './components/AddPersonModal';
 import { BirthdayDetailPage } from './components/BirthdayDetailPage';
 import { SettingsModal } from './components/SettingsModal';
@@ -31,22 +31,18 @@ export function App() {
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string>('');
 
-  // Active Bottom Navigation View ('home' | 'buddies')
+  // Active Navigation View ('home' | 'buddies')
   const [activeTab, setActiveTab] = useState<'home' | 'buddies'>('home');
 
   // Toast feedback state
   const [toastMessage, setToastMessage] = useState<string | null>(null);
-
-  // Search & Filter state for Home screen
-  const [searchQuery, setSearchQuery] = useState<string>('');
-  const [selectedCategory, setSelectedCategory] = useState<string>('All');
 
   // Modals & Screen Navigation
   const [isAddModalOpen, setIsAddModalOpen] = useState<boolean>(false);
   const [isSettingsOpen, setIsSettingsOpen] = useState<boolean>(false);
   const [selectedDetailPerson, setSelectedDetailPerson] = useState<Person | null>(null);
 
-  // Post-Add Notification & Reminder Dialog States
+  // Post-Add Notification & Reminder Dialog States (Capacitor Android only)
   const [isNotificationPermissionOpen, setIsNotificationPermissionOpen] = useState<boolean>(false);
   const [isReminderSetupOpen, setIsReminderSetupOpen] = useState<boolean>(false);
   const [newlyAddedPerson, setNewlyAddedPerson] = useState<Person | null>(null);
@@ -139,7 +135,7 @@ export function App() {
         setIsSettingsOpen(false);
         return;
       }
-      // Priority 5: Birthday Detail View -> return to Home / Buddies
+      // Priority 5: Birthday Detail View -> return to previous view
       if (selectedDetailPersonRef.current) {
         setSelectedDetailPerson(null);
         return;
@@ -147,6 +143,7 @@ export function App() {
       // Priority 6: Buddies Screen -> return to Home
       if (activeTabRef.current === 'buddies') {
         setActiveTab('home');
+        pushNav('home');
         return;
       }
       // Priority 7: Home / Root Screen -> 2-press back exit window (2000ms)
@@ -159,14 +156,20 @@ export function App() {
       }
     });
 
-    // 2. Web browser popstate fallback
+    // 2. Web browser popstate synchronization
     const handlePopState = (event: PopStateEvent) => {
       const state = event.state as AppNavState | null;
 
-      if (!state || state.view === 'dashboard') {
+      if (!state || state.view === 'home' || state.view === 'dashboard') {
         setIsAddModalOpen(false);
         setIsSettingsOpen(false);
         setSelectedDetailPerson(null);
+        setActiveTab('home');
+      } else if (state.view === 'buddies') {
+        setIsAddModalOpen(false);
+        setIsSettingsOpen(false);
+        setSelectedDetailPerson(null);
+        setActiveTab('buddies');
       } else if (state.view === 'detail') {
         setIsAddModalOpen(false);
         setIsSettingsOpen(false);
@@ -222,7 +225,7 @@ export function App() {
   const handleOpenDetail = (person: Person) => {
     pushNav('detail', person.id);
     setSelectedDetailPerson(person);
-    window.scrollTo({ top: 0, behavior: 'smooth' });
+    window.scrollTo({ top: 0, behavior: 'instant' });
   };
 
   const handleCloseDetail = () => {
@@ -230,13 +233,14 @@ export function App() {
     popNav();
   };
 
-  // Navigation tab switcher
+  // Navigation tab switcher (Home vs Buddies)
   const handleSelectTab = (tab: 'home' | 'buddies') => {
     if (selectedDetailPerson) {
       setSelectedDetailPerson(null);
     }
     setActiveTab(tab);
-    window.scrollTo({ top: 0, behavior: 'smooth' });
+    pushNav(tab);
+    window.scrollTo({ top: 0, behavior: 'instant' });
   };
 
   // Data Handlers
@@ -246,24 +250,36 @@ export function App() {
     setIsAddModalOpen(false);
     popNav();
 
-    // Check notification permission flow
-    const currentPerm = await checkNotificationPermission();
-    if (currentPerm === 'granted') {
-      // Permission already granted: prompt reminder setup directly
-      setNewlyAddedPerson(created);
-      setIsReminderSetupOpen(true);
-    } else if (currentPerm !== 'denied') {
-      // First prompt friendly notification permission dialog
-      setNewlyAddedPerson(created);
-      setIsNotificationPermissionOpen(true);
-    } else {
-      // Denied or unsupported
+    // 1. Standard Web Browser Mode:
+    // Pure web experience — no native Capacitor permission prompts or errors
+    if (!Capacitor.isNativePlatform()) {
+      showToast(`🎉 Added ${created.name} to Birthday Buddy!`);
+      return;
+    }
+
+    // 2. Capacitor Android Native Mode:
+    try {
+      const currentPerm = await checkNotificationPermission();
+      if (currentPerm === 'granted') {
+        // Permission already granted: prompt reminder setup directly
+        setNewlyAddedPerson(created);
+        setIsReminderSetupOpen(true);
+      } else {
+        // First prompt friendly notification permission dialog
+        setNewlyAddedPerson(created);
+        setIsNotificationPermissionOpen(true);
+      }
+    } catch {
       showToast(`🎉 Added ${created.name} to Birthday Buddy!`);
     }
   };
 
-  // Post-Add Notification Permission Dialog Handlers
+  // Post-Add Notification Permission Dialog Handlers (Capacitor Android only)
   const handleAllowNotifications = async () => {
+    if (!Capacitor.isNativePlatform()) {
+      setIsNotificationPermissionOpen(false);
+      return;
+    }
     const status = await requestNotificationPermission();
     setIsNotificationPermissionOpen(false);
     if (status === 'granted' && newlyAddedPerson) {
@@ -283,7 +299,7 @@ export function App() {
 
   // Post-Permission Reminder Setup Dialog Handlers
   const handleSetReminders = async () => {
-    if (newlyAddedPerson) {
+    if (newlyAddedPerson && Capacitor.isNativePlatform()) {
       await schedulePersonBirthdayReminders(newlyAddedPerson);
       showToast(`🔔 Reminders active for ${newlyAddedPerson.name}!`);
     }
@@ -300,8 +316,10 @@ export function App() {
   const handleUpdatePerson = async (id: number, data: Partial<PersonInput>): Promise<Person> => {
     const updated = await updatePerson(id, data);
     await loadUpcomingBirthdays();
-    // Refresh scheduled notifications if reminders changed
-    await schedulePersonBirthdayReminders(updated);
+    // Refresh scheduled notifications if reminders changed on native
+    if (Capacitor.isNativePlatform()) {
+      await schedulePersonBirthdayReminders(updated);
+    }
     showToast(`🎉 Updated ${updated.name}'s details!`);
     return updated;
   };
@@ -371,28 +389,12 @@ export function App() {
     }
   };
 
-  const categories = ['All', 'Friend', 'Best Friend', 'Family', 'Partner', 'Colleague', 'Other'];
-
-  // Filtered people for Home screen
-  const filteredPeople = people.filter((person) => {
-    const matchesSearch =
-      person.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      (person.notes && person.notes.toLowerCase().includes(searchQuery.toLowerCase()));
-
-    const matchesCategory =
-      selectedCategory.toLowerCase() === 'all' ||
-      (person.relationship && person.relationship.toLowerCase() === selectedCategory.toLowerCase());
-
-    return matchesSearch && matchesCategory;
-  });
-
   // Date-Stage Breakdown for Home screen
-  const todayBirthdays = filteredPeople.filter((p) => (p.days_remaining ?? p.days_until ?? 999) === 0);
-  const thisWeekBirthdays = filteredPeople.filter((p) => {
+  const todayBirthdays = people.filter((p) => (p.days_remaining ?? p.days_until ?? 999) === 0);
+  const thisWeekBirthdays = people.filter((p) => {
     const d = p.days_remaining ?? p.days_until ?? 999;
     return d > 0 && d <= 7;
   });
-  const comingUpBirthdays = filteredPeople.filter((p) => (p.days_remaining ?? p.days_until ?? 999) > 7);
 
   // Next upcoming birthday (first person overall in upcoming list)
   const nextPerson = people.length > 0 ? people[0] : null;
@@ -412,6 +414,8 @@ export function App() {
       {/* Header (rendered on Home & Buddies views, hidden on Birthday Detail to give Back bar priority) */}
       {!selectedDetailPerson && (
         <Header
+          activeTab={activeTab}
+          onSelectTab={handleSelectTab}
           onOpenAddModal={handleOpenAddModal}
           onOpenSettings={handleOpenSettings}
           totalCount={people.length}
@@ -432,7 +436,9 @@ export function App() {
         ) : error ? (
           <ErrorState message={error} onRetry={loadUpcomingBirthdays} />
         ) : activeTab === 'buddies' ? (
-          /* DEDICATED BUDDIES SCREEN */
+          /* ============================================================ */
+          /* DEDICATED BUDDIES SCREEN (Search, Filter Chips, All Buddies) */
+          /* ============================================================ */
           <BuddiesScreen
             people={people}
             onViewBirthday={handleOpenDetail}
@@ -441,181 +447,154 @@ export function App() {
             onSeedSampleData={handleSeedSampleData}
           />
         ) : (
-          /* HOME DASHBOARD SCREEN */
-          <>
-            {/* Top Spotlight Hero (if there are people and no active filter) */}
-            {!searchQuery && selectedCategory.toLowerCase() === 'all' && (
-              <BirthdayHero
-                person={nextPerson}
-                onViewBirthday={handleOpenDetail}
-                onOpenAddModal={handleOpenAddModal}
-              />
+          /* ============================================================ */
+          /* HOME DASHBOARD SCREEN (Hero Card, Today & This Week Summary) */
+          /* ============================================================ */
+          <div className="space-y-8 animate-in fade-in duration-200">
+            {/* Top Spotlight Hero */}
+            <BirthdayHero
+              person={nextPerson}
+              onViewBirthday={handleOpenDetail}
+              onOpenAddModal={handleOpenAddModal}
+            />
+
+            {/* 1. 🎂 TODAY SECTION (Only shown when someone has a birthday today) */}
+            {todayBirthdays.length > 0 && (
+              <section className="bg-gradient-to-r from-amber-500/20 via-pink-500/15 to-purple-500/20 border-2 border-amber-400/80 rounded-3xl p-5 sm:p-7 shadow-glow-festive animate-pulse-subtle">
+                <div className="flex items-center gap-2 mb-4">
+                  <span className="p-1.5 rounded-xl bg-amber-500 text-white shadow-sm">
+                    <PartyPopper className="w-5 h-5" />
+                  </span>
+                  <div>
+                    <h2 className="text-xl sm:text-2xl font-black text-slate-800 tracking-tight flex items-center gap-2">
+                      <span>Today's Celebrations! 🎉</span>
+                      <span className="text-xs px-2.5 py-0.5 rounded-full bg-amber-500 text-white font-black">
+                        {todayBirthdays.length}
+                      </span>
+                    </h2>
+                    <p className="text-xs text-slate-600 font-semibold">
+                      It's their special day! Tap to prepare and send your birthday wish immediately.
+                    </p>
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  {todayBirthdays.map((person) => {
+                    const firstLetter = person.name ? person.name.charAt(0).toUpperCase() : '?';
+                    return (
+                      <div
+                        key={person.id}
+                        onClick={() => handleOpenDetail(person)}
+                        className="bg-white rounded-2xl p-4 sm:p-5 border border-amber-300 shadow-md hover:shadow-lg transition-all duration-200 cursor-pointer flex items-center justify-between gap-4 group"
+                      >
+                        <div className="flex items-center gap-3.5 min-w-0">
+                          <div className="w-12 h-12 rounded-2xl bg-gradient-to-tr from-amber-500 via-pink-500 to-purple-600 text-white font-black text-xl flex items-center justify-center shadow-sm flex-shrink-0">
+                            {firstLetter}
+                          </div>
+                          <div className="min-w-0">
+                            <h3 className="font-extrabold text-base text-slate-900 group-hover:text-purple-700 transition-colors truncate">
+                              {person.name}
+                            </h3>
+                            <div className="flex items-center gap-2 text-xs font-semibold text-slate-500 mt-0.5">
+                              <span className="px-2 py-0.5 rounded-full bg-amber-100 text-amber-900 text-[11px] font-bold">
+                                {person.relationship}
+                              </span>
+                              {person.age_turning ? (
+                                <span>Turning <strong>{person.age_turning}</strong></span>
+                              ) : null}
+                            </div>
+                          </div>
+                        </div>
+
+                        <button
+                          type="button"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleOpenDetail(person);
+                          }}
+                          className="px-4 py-2.5 rounded-xl bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 text-white text-xs font-extrabold shadow-sm flex items-center gap-1.5 flex-shrink-0 group-hover:scale-105 transition-transform"
+                        >
+                          <span>Send Wish 🚀</span>
+                        </button>
+                      </div>
+                    );
+                  })}
+                </div>
+              </section>
             )}
 
-            {/* Buddies Section Anchor & Search / Filter */}
-            <div id="buddies-list" className="scroll-mt-20">
-              <section className="mt-8">
-                <SearchBar
-                  searchQuery={searchQuery}
-                  onSearchChange={setSearchQuery}
-                  selectedCategory={selectedCategory}
-                  onCategoryChange={setSelectedCategory}
-                  categories={categories}
-                  totalResults={filteredPeople.length}
-                />
-              </section>
-
-              {/* ACTION STAGES LAYOUT */}
-              {filteredPeople.length > 0 ? (
-                <div className="space-y-10 mt-6 animate-in fade-in duration-300">
-                  {/* 1. 🎂 TODAY SECTION (Highest Visual Emphasis) */}
-                  {todayBirthdays.length > 0 && (
-                    <section className="bg-gradient-to-r from-amber-500/20 via-pink-500/15 to-purple-500/20 border-2 border-amber-400/80 rounded-3xl p-5 sm:p-7 shadow-glow-festive animate-pulse-subtle">
-                      <div className="flex items-center gap-2 mb-4">
-                        <span className="p-1.5 rounded-xl bg-amber-500 text-white shadow-sm">
-                          <PartyPopper className="w-5 h-5" />
+            {/* 2. ⏰ THIS WEEK SECTION (Coming up in the next 7 days) */}
+            {thisWeekBirthdays.length > 0 && (
+              <section className="space-y-4">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <span className="p-1.5 rounded-xl bg-purple-100 text-purple-700">
+                      <Clock className="w-4 h-4" />
+                    </span>
+                    <div>
+                      <h2 className="text-lg sm:text-xl font-extrabold text-slate-800 tracking-tight flex items-center gap-2">
+                        <span>This Week</span>
+                        <span className="text-xs px-2 py-0.5 rounded-full bg-purple-100 text-purple-800 font-bold">
+                          {thisWeekBirthdays.length}
                         </span>
-                        <div>
-                          <h2 className="text-xl sm:text-2xl font-black text-slate-800 tracking-tight flex items-center gap-2">
-                            <span>Today's Celebrations! 🎉</span>
-                            <span className="text-xs px-2.5 py-0.5 rounded-full bg-amber-500 text-white font-black">
-                              {todayBirthdays.length}
-                            </span>
-                          </h2>
-                          <p className="text-xs text-slate-600 font-semibold">
-                            It's their special day! Tap to prepare and send your birthday wish immediately.
-                          </p>
-                        </div>
-                      </div>
-
-                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                        {todayBirthdays.map((person) => {
-                          const firstLetter = person.name ? person.name.charAt(0).toUpperCase() : '?';
-                          return (
-                            <div
-                              key={person.id}
-                              onClick={() => handleOpenDetail(person)}
-                              className="bg-white rounded-2xl p-4 sm:p-5 border border-amber-300 shadow-md hover:shadow-lg transition-all duration-200 cursor-pointer flex items-center justify-between gap-4 group"
-                            >
-                              <div className="flex items-center gap-3.5">
-                                <div className="w-13 h-13 rounded-2xl bg-gradient-to-tr from-amber-500 via-pink-500 to-purple-600 text-white font-black text-xl flex items-center justify-center shadow-sm">
-                                  {firstLetter}
-                                </div>
-                                <div>
-                                  <h3 className="font-extrabold text-base text-slate-900 group-hover:text-purple-700 transition-colors">
-                                    {person.name}
-                                  </h3>
-                                  <div className="flex items-center gap-2 text-xs font-semibold text-slate-500 mt-0.5">
-                                    <span className="px-2 py-0.5 rounded-full bg-amber-100 text-amber-900 text-[11px] font-bold">
-                                      {person.relationship}
-                                    </span>
-                                    {person.age_turning ? (
-                                      <span>Turning <strong>{person.age_turning}</strong></span>
-                                    ) : null}
-                                  </div>
-                                </div>
-                              </div>
-
-                              <button
-                                type="button"
-                                onClick={(e) => {
-                                  e.stopPropagation();
-                                  handleOpenDetail(person);
-                                }}
-                                className="px-4 py-2.5 rounded-xl bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 text-white text-xs font-extrabold shadow-sm flex items-center gap-1.5 flex-shrink-0 group-hover:scale-105 transition-transform"
-                              >
-                                <span>Send Wish 🚀</span>
-                              </button>
-                            </div>
-                          );
-                        })}
-                      </div>
-                    </section>
-                  )}
-
-                  {/* 2. ⏰ THIS WEEK SECTION (Within 7 Days) */}
-                  {thisWeekBirthdays.length > 0 && (
-                    <section>
-                      <div className="flex items-center justify-between mb-4">
-                        <div className="flex items-center gap-2">
-                          <span className="p-1.5 rounded-xl bg-purple-100 text-purple-700">
-                            <Clock className="w-4 h-4" />
-                          </span>
-                          <div>
-                            <h2 className="text-lg sm:text-xl font-extrabold text-slate-800 tracking-tight flex items-center gap-2">
-                              <span>This Week</span>
-                              <span className="text-xs px-2 py-0.5 rounded-full bg-purple-100 text-purple-800 font-bold">
-                                {thisWeekBirthdays.length}
-                              </span>
-                            </h2>
-                            <p className="text-xs text-slate-500 font-medium">
-                              Coming up in the next 7 days — prepare your wishes & gifts
-                            </p>
-                          </div>
-                        </div>
-                      </div>
-
-                      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-                        {thisWeekBirthdays.map((person) => (
-                          <BirthdayCard
-                            key={person.id}
-                            person={person}
-                            onViewBirthday={handleOpenDetail}
-                            onDelete={handleDeletePerson}
-                          />
-                        ))}
-                      </div>
-                    </section>
-                  )}
-
-                  {/* 3. 📅 COMING UP SECTION (More than 7 days) */}
-                  {comingUpBirthdays.length > 0 && (
-                    <section>
-                      <div className="flex items-center justify-between mb-4">
-                        <div className="flex items-center gap-2">
-                          <span className="p-1.5 rounded-xl bg-slate-100 text-slate-700">
-                            <Calendar className="w-4 h-4" />
-                          </span>
-                          <div>
-                            <h2 className="text-lg sm:text-xl font-extrabold text-slate-800 tracking-tight flex items-center gap-2">
-                              <span>Coming Up</span>
-                              <span className="text-xs px-2 py-0.5 rounded-full bg-slate-100 text-slate-700 font-bold">
-                                {comingUpBirthdays.length}
-                              </span>
-                            </h2>
-                            <p className="text-xs text-slate-500 font-medium">
-                              Sorted by nearest celebration date
-                            </p>
-                          </div>
-                        </div>
-                      </div>
-
-                      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-                        {comingUpBirthdays.map((person) => (
-                          <BirthdayCard
-                            key={person.id}
-                            person={person}
-                            onViewBirthday={handleOpenDetail}
-                            onDelete={handleDeletePerson}
-                          />
-                        ))}
-                      </div>
-                    </section>
-                  )}
+                      </h2>
+                      <p className="text-xs text-slate-500 font-medium">
+                        Coming up in the next 7 days — prepare your wishes & gifts
+                      </p>
+                    </div>
+                  </div>
                 </div>
-              ) : (
-                <EmptyState
-                  isSearching={Boolean(searchQuery || selectedCategory.toLowerCase() !== 'all')}
-                  onOpenAddModal={handleOpenAddModal}
-                  onClearSearch={() => {
-                    setSearchQuery('');
-                    setSelectedCategory('All');
-                  }}
-                  onSeedSampleData={people.length === 0 ? handleSeedSampleData : undefined}
-                />
-              )}
-            </div>
-          </>
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                  {thisWeekBirthdays.map((person) => (
+                    <BirthdayCard
+                      key={person.id}
+                      person={person}
+                      onViewBirthday={handleOpenDetail}
+                      onDelete={handleDeletePerson}
+                    />
+                  ))}
+                </div>
+              </section>
+            )}
+
+            {/* 3. QUICK BANNER TO COMPLETE BUDDIES DIRECTORY */}
+            {people.length > 0 && (
+              <div className="p-5 sm:p-6 rounded-3xl bg-white border border-warm-200/80 shadow-soft flex flex-col sm:flex-row items-center justify-between gap-4">
+                <div className="flex items-center gap-3.5">
+                  <div className="w-11 h-11 rounded-2xl bg-purple-100 text-purple-700 flex items-center justify-center font-bold flex-shrink-0">
+                    <Users className="w-5 h-5" />
+                  </div>
+                  <div>
+                    <h3 className="font-extrabold text-slate-800 text-base">
+                      All Saved Buddies ({people.length})
+                    </h3>
+                    <p className="text-xs text-slate-500 font-medium mt-0.5">
+                      Search, filter by relationship, and browse your full birthday list.
+                    </p>
+                  </div>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => handleSelectTab('buddies')}
+                  className="w-full sm:w-auto inline-flex items-center justify-center gap-1.5 px-5 py-2.5 rounded-full bg-gradient-to-r from-purple-600 via-fuchsia-600 to-pink-500 hover:from-purple-700 hover:to-pink-600 text-white text-xs font-bold shadow-soft hover:shadow-soft-hover active:scale-95 transition-all flex-shrink-0"
+                >
+                  <span>Open Buddies List</span>
+                  <ChevronRight className="w-4 h-4" />
+                </button>
+              </div>
+            )}
+
+            {/* Empty State when zero people */}
+            {people.length === 0 && (
+              <EmptyState
+                isSearching={false}
+                onOpenAddModal={handleOpenAddModal}
+                onClearSearch={() => {}}
+                onSeedSampleData={handleSeedSampleData}
+              />
+            )}
+          </div>
         )}
       </main>
 
@@ -634,14 +613,14 @@ export function App() {
         onSubmit={handleAddPerson}
       />
 
-      {/* Post-Add Friendly Notification Permission Dialog */}
+      {/* Post-Add Friendly Notification Permission Dialog (Capacitor Android only) */}
       <NotificationPermissionDialog
         isOpen={isNotificationPermissionOpen}
         onAllow={handleAllowNotifications}
         onNotNow={handleNotNowNotifications}
       />
 
-      {/* Post-Permission Friendly Reminder Setup Dialog */}
+      {/* Post-Permission Friendly Reminder Setup Dialog (Capacitor Android only) */}
       <ReminderSetupDialog
         isOpen={isReminderSetupOpen}
         person={newlyAddedPerson}

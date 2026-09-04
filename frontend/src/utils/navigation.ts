@@ -6,7 +6,9 @@
  */
 
 export type NavView = 
+  | 'home'
   | 'dashboard'
+  | 'buddies'
   | 'detail'
   | 'add'
   | 'settings'
