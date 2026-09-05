@@ -113,13 +113,26 @@ export function App() {
   // Initial load, Safe Area, History & Capacitor Back Button setup
   useEffect(() => {
     const cleanupTheme = initTheme();
-    loadUpcomingBirthdays().then((data) => {
-      if (Capacitor.isNativePlatform() && data.length > 0) {
-        checkNotificationPermission().then((perm) => {
+    loadUpcomingBirthdays().then(async (data) => {
+      if (Capacitor.isNativePlatform()) {
+        try {
+          const perm = await checkNotificationPermission();
           if (perm === 'granted') {
-            syncAllBirthdayReminders(data);
+            if (data.length > 0) {
+              await syncAllBirthdayReminders(data);
+            }
+          } else {
+            // First-time startup check: prompt user if permission not granted and prompt not yet answered
+            const hasAnsweredPrompt = localStorage.getItem('bb_notif_prompt_answered');
+            if (!hasAnsweredPrompt) {
+              setTimeout(() => {
+                setIsNotificationPermissionOpen(true);
+              }, 600);
+            }
           }
-        });
+        } catch (err) {
+          console.warn('Notification startup check notice:', err);
+        }
       }
     });
     initHistoryState();
@@ -507,9 +520,9 @@ export function App() {
                       <div
                         key={person.id}
                         onClick={() => handleOpenDetail(person)}
-                        className="bg-white dark:bg-slate-800 rounded-2xl p-4 sm:p-5 border border-amber-300 dark:border-amber-500/40 shadow-md hover:shadow-lg transition-all duration-200 cursor-pointer flex flex-wrap items-center justify-between gap-3 sm:gap-4 group"
+                        className="bg-white dark:bg-slate-800 rounded-2xl p-4 sm:p-5 border border-amber-300 dark:border-amber-500/40 shadow-md hover:shadow-lg transition-all duration-200 cursor-pointer flex flex-col min-[350px]:flex-row min-[350px]:items-center justify-between gap-3 sm:gap-4 group"
                       >
-                        <div className="flex items-start gap-3.5 min-w-[170px] flex-1">
+                        <div className="flex items-center gap-3.5 min-w-0 flex-1">
                           <div className="w-12 h-12 rounded-2xl bg-gradient-to-tr from-amber-500 via-pink-500 to-purple-600 text-white font-black text-xl flex items-center justify-center shadow-sm shrink-0">
                             {firstLetter}
                           </div>
@@ -517,27 +530,27 @@ export function App() {
                             <h3 className="font-extrabold text-base text-slate-900 dark:text-white group-hover:text-purple-700 dark:group-hover:text-purple-400 transition-colors truncate">
                               {person.name}
                             </h3>
-                            <div className="flex items-center pt-0.5">
+                            <div className="flex items-center gap-2 flex-wrap pt-0.5">
                               <span className="px-2 py-0.5 rounded-full bg-amber-100 dark:bg-amber-950/70 text-amber-900 dark:text-amber-200 text-[11px] font-bold shrink-0">
                                 {person.relationship}
                               </span>
+                              {person.age_turning ? (
+                                <span className="text-xs font-semibold text-slate-500 dark:text-slate-400">
+                                  Turning <strong className="text-slate-700 dark:text-slate-200 font-bold">{person.age_turning}</strong>
+                                </span>
+                              ) : null}
                             </div>
-                            {person.age_turning ? (
-                              <p className="text-xs font-semibold text-slate-500 dark:text-slate-400 pt-0.5">
-                                Turning <strong className="text-slate-700 dark:text-slate-200 font-bold">{person.age_turning}</strong>
-                              </p>
-                            ) : null}
                           </div>
                         </div>
 
-                        <div className="flex items-center justify-end shrink-0 ml-auto">
+                        <div className="w-full min-[350px]:w-auto flex justify-end shrink-0">
                           <button
                             type="button"
                             onClick={(e) => {
                               e.stopPropagation();
                               handleOpenDetail(person);
                             }}
-                            className="px-4 py-2.5 rounded-xl bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 text-white text-xs font-extrabold shadow-sm flex items-center gap-1.5 shrink-0 group-hover:scale-105 transition-transform"
+                            className="w-full min-[350px]:w-auto px-4 py-2.5 rounded-xl bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 text-white text-xs font-extrabold shadow-sm flex items-center justify-center gap-1.5 shrink-0 group-hover:scale-105 transition-transform"
                           >
                             <span>Send Wish 🚀</span>
                           </button>
