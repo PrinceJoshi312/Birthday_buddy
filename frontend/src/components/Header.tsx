@@ -24,7 +24,7 @@ export const Header: React.FC<HeaderProps> = ({
 
   return (
     <header 
-      className="sticky top-0 z-30 bg-[#FAF8F5]/90 dark:bg-slate-950/90 backdrop-blur-md border-b border-warm-200/70 dark:border-slate-800 px-3 sm:px-8 pb-3 transition-all"
+      className="sticky top-0 z-30 bg-[#FAF8F5]/90 dark:bg-slate-950/90 backdrop-blur-md border-t border-black/[0.06] dark:border-white/[0.08] border-b border-warm-200/70 dark:border-slate-800 px-3 sm:px-8 pb-3 transition-all"
       style={{ paddingTop: 'calc(0.75rem + env(safe-area-inset-top, 0px))' }}
     >
       <div className="max-w-6xl mx-auto flex items-center justify-between gap-2 sm:gap-4">
