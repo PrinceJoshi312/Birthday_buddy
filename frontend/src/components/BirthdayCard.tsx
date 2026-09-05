@@ -40,7 +40,7 @@ export const BirthdayCard: React.FC<BirthdayCardProps> = ({
   return (
     <div
       onClick={() => onViewBirthday(person)}
-      className="group relative bg-white rounded-2xl p-5 border border-warm-200/80 shadow-soft hover:shadow-soft-hover transition-all duration-300 flex flex-col justify-between hover:-translate-y-1 cursor-pointer"
+      className="group relative bg-white dark:bg-slate-900 rounded-2xl p-5 border border-warm-200/80 dark:border-slate-800 shadow-soft hover:shadow-soft-hover transition-all duration-300 flex flex-col justify-between hover:-translate-y-1 cursor-pointer"
     >
       <div>
         {/* Top Row: Avatar, Name & Countdown Badge */}
@@ -50,7 +50,7 @@ export const BirthdayCard: React.FC<BirthdayCardProps> = ({
               {firstLetter}
             </div>
             <div>
-              <h3 className="font-bold text-slate-800 text-base leading-tight group-hover:text-purple-700 transition-colors">
+              <h3 className="font-bold text-slate-800 dark:text-white text-base leading-tight group-hover:text-purple-700 dark:group-hover:text-purple-400 transition-colors">
                 {person.name}
               </h3>
               <span className={`inline-block text-[11px] px-2 py-0.5 mt-1 rounded-full font-semibold border ${getRelationshipBadgeStyle(person.relationship)}`}>
@@ -66,30 +66,30 @@ export const BirthdayCard: React.FC<BirthdayCardProps> = ({
         </div>
 
         {/* Middle: Birthday Date & Details */}
-        <div className="bg-[#FAF8F5] rounded-xl p-3 text-xs text-slate-600 flex items-center justify-between border border-warm-100/90 mb-3">
+        <div className="bg-[#FAF8F5] dark:bg-slate-800/80 rounded-xl p-3 text-xs text-slate-600 dark:text-slate-300 flex items-center justify-between border border-warm-100/90 dark:border-slate-700 mb-3">
           <div className="flex items-center gap-2">
-            <Calendar className="w-3.5 h-3.5 text-purple-500" />
-            <span className="font-semibold text-slate-700">{formatBirthdayDate(person.birthday)}</span>
+            <Calendar className="w-3.5 h-3.5 text-purple-500 dark:text-purple-400" />
+            <span className="font-semibold text-slate-700 dark:text-slate-200">{formatBirthdayDate(person.birthday)}</span>
             {zodiac && <span className="text-slate-400">({zodiac})</span>}
           </div>
           {person.age_turning ? (
             <div className="text-[11px]">
               <span className="text-slate-400">Turning </span>
-              <span className="font-bold text-slate-800">{person.age_turning}</span>
+              <span className="font-bold text-slate-800 dark:text-white">{person.age_turning}</span>
             </div>
           ) : null}
         </div>
 
         {/* Optional Notes snippet */}
         {person.notes && (
-          <p className="text-xs text-slate-500 italic bg-purple-50/40 px-2.5 py-2 rounded-lg border border-purple-100/50 line-clamp-1 mb-2">
+          <p className="text-xs text-slate-500 dark:text-slate-400 italic bg-purple-50/40 dark:bg-purple-950/30 px-2.5 py-2 rounded-lg border border-purple-100/50 dark:border-purple-900/40 line-clamp-1 mb-2">
             "{person.notes}"
           </p>
         )}
       </div>
 
       {/* Footer / Action row */}
-      <div className="pt-3 border-t border-slate-100 flex items-center justify-between text-xs text-purple-700 font-semibold group-hover:text-purple-900 transition-colors">
+      <div className="pt-3 border-t border-slate-100 dark:border-slate-800 flex items-center justify-between text-xs text-purple-700 dark:text-purple-400 font-semibold group-hover:text-purple-900 dark:group-hover:text-purple-300 transition-colors">
         <span>View Details</span>
         <ChevronRight className="w-4 h-4 transform group-hover:translate-x-1 transition-transform" />
       </div>

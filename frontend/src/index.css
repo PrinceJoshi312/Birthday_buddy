@@ -44,6 +44,10 @@
   -webkit-backdrop-filter: blur(12px);
 }
 
+.dark .glass-panel {
+  background: rgba(30, 41, 59, 0.85);
+}
+
 .gradient-text {
   background: linear-gradient(135deg, #A855F7 0%, #EC4899 50%, #F59E0B 100%);
   -webkit-background-clip: text;
@@ -52,4 +56,21 @@
 
 .gradient-hero {
   background: linear-gradient(135deg, #7E22CE 0%, #C026D3 50%, #F97316 100%);
+}
+
+html.dark, body.dark {
+  background-color: #0f172a;
+  color: #f8fafc;
+}
+
+.dark ::-webkit-scrollbar-track {
+  background: #0f172a;
+}
+
+.dark ::-webkit-scrollbar-thumb {
+  background: #334155;
+}
+
+.dark ::-webkit-scrollbar-thumb:hover {
+  background: #475569;
 }

@@ -19,7 +19,7 @@ export const ReminderSetupDialog: React.FC<ReminderSetupDialogProps> = ({
 
   return (
     <div className="fixed inset-0 z-50 overflow-y-auto bg-slate-950/60 backdrop-blur-sm flex items-center justify-center p-4 transition-opacity animate-in fade-in duration-200">
-      <div className="relative w-full max-w-sm bg-white rounded-3xl shadow-2xl border border-warm-200/90 p-6 text-center space-y-4 animate-in zoom-in-95 duration-200">
+      <div className="relative w-full max-w-sm bg-white dark:bg-slate-900 rounded-3xl shadow-2xl border border-warm-200/90 dark:border-slate-800 p-6 text-center space-y-4 animate-in zoom-in-95 duration-200">
         {/* Icon */}
         <div className="w-14 h-14 mx-auto rounded-3xl bg-gradient-to-tr from-amber-400 to-orange-500 text-white flex items-center justify-center shadow-soft">
           <Clock className="w-7 h-7" />
@@ -27,11 +27,11 @@ export const ReminderSetupDialog: React.FC<ReminderSetupDialogProps> = ({
 
         {/* Title & Description */}
         <div>
-          <h3 className="text-xl font-black text-slate-800 tracking-tight">
+          <h3 className="text-xl font-black text-slate-800 dark:text-white tracking-tight">
             Set up birthday reminders 🔔
           </h3>
-          <p className="text-xs text-slate-500 font-medium mt-2 leading-relaxed">
-            Would you like Birthday Buddy to remind you about <strong>{person.name}</strong>'s birthday?
+          <p className="text-xs text-slate-500 dark:text-slate-400 font-medium mt-2 leading-relaxed">
+            Would you like Birthday Buddy to remind you about <strong className="text-slate-700 dark:text-slate-200">{person.name}</strong>'s birthday?
           </p>
         </div>
 

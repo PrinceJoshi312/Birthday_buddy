@@ -204,26 +204,26 @@ export const AddPersonModal: React.FC<AddPersonModalProps> = ({
         paddingBottom: 'env(safe-area-inset-bottom, 0px)',
       }}
     >
-      <div className="relative w-full max-w-xl bg-white rounded-t-3xl sm:rounded-3xl shadow-2xl border-0 sm:border sm:border-warm-200/90 overflow-hidden transform transition-all animate-in fade-in zoom-in-95 duration-200 min-h-screen sm:min-h-0 sm:my-6 flex flex-col max-h-[100dvh] sm:max-h-[90vh]">
+      <div className="relative w-full max-w-xl bg-white dark:bg-slate-900 rounded-t-3xl sm:rounded-3xl shadow-2xl border-0 sm:border sm:border-warm-200/90 dark:border-slate-800 overflow-hidden transform transition-all animate-in fade-in zoom-in-95 duration-200 min-h-screen sm:min-h-0 sm:my-6 flex flex-col max-h-[100dvh] sm:max-h-[90vh]">
         {/* Sticky/Pinned Modal Header */}
         <div 
-          className="sticky top-0 z-20 px-5 sm:px-8 pt-4 pb-4 bg-gradient-to-r from-purple-100/95 via-pink-100/85 to-amber-100/95 border-b border-warm-200/80 backdrop-blur-md flex-shrink-0"
+          className="sticky top-0 z-20 px-5 sm:px-8 pt-4 pb-4 bg-gradient-to-r from-purple-100/95 via-pink-100/85 to-amber-100/95 dark:from-purple-950/95 dark:via-slate-900/90 dark:to-amber-950/95 border-b border-warm-200/80 dark:border-slate-800 backdrop-blur-md flex-shrink-0"
         >
           <div className="flex items-center justify-between gap-2 mb-2">
             <button
               type="button"
               onClick={onClose}
-              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-white/95 hover:bg-white text-slate-700 hover:text-purple-700 border border-warm-300/80 text-xs font-extrabold shadow-xs active:scale-95 transition-all"
+              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-white/95 dark:bg-slate-800 hover:bg-white text-slate-700 dark:text-slate-200 hover:text-purple-700 border border-warm-300/80 dark:border-slate-700 text-xs font-extrabold shadow-xs active:scale-95 transition-all"
               aria-label="Back"
             >
-              <ArrowLeft className="w-4 h-4 text-purple-600" />
+              <ArrowLeft className="w-4 h-4 text-purple-600 dark:text-purple-400" />
               <span>Back</span>
             </button>
 
             <button
               type="button"
               onClick={onClose}
-              className="w-8 h-8 rounded-xl bg-white/95 hover:bg-white text-slate-400 hover:text-slate-700 flex items-center justify-center transition-colors shadow-xs active:scale-95"
+              className="w-8 h-8 rounded-xl bg-white/95 dark:bg-slate-800 hover:bg-white text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 flex items-center justify-center transition-colors shadow-xs active:scale-95"
               aria-label="Close"
             >
               <X className="w-4 h-4" />
@@ -236,10 +236,10 @@ export const AddPersonModal: React.FC<AddPersonModalProps> = ({
                 <Sparkles className="w-3 h-3" /> New Person
               </span>
             </div>
-            <h2 className="text-xl sm:text-2xl font-black text-slate-800 tracking-tight mt-1">
+            <h2 className="text-xl sm:text-2xl font-black text-slate-800 dark:text-white tracking-tight mt-1">
               Add a Birthday 🎂
             </h2>
-            <p className="text-xs text-slate-500 font-medium mt-0.5">
+            <p className="text-xs text-slate-500 dark:text-slate-400 font-medium mt-0.5">
               We'll calculate countdowns and remind you so you never forget!
             </p>
           </div>
@@ -261,7 +261,7 @@ export const AddPersonModal: React.FC<AddPersonModalProps> = ({
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-5">
             {/* Name Input */}
             <div>
-              <label htmlFor="person-name" className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1.5">
+              <label htmlFor="person-name" className="block text-xs font-bold text-slate-700 dark:text-slate-200 uppercase tracking-wider mb-1.5">
                 Full Name <span className="text-rose-500">*</span>
               </label>
               <div className="relative">
@@ -276,10 +276,10 @@ export const AddPersonModal: React.FC<AddPersonModalProps> = ({
                   value={name}
                   onChange={handleNameChange}
                   onBlur={() => handleBlur('name')}
-                  className={`w-full pl-10 pr-4 py-3 rounded-2xl text-sm font-medium transition-all bg-warm-50/70 border ${
+                  className={`w-full pl-10 pr-4 py-3 rounded-2xl text-sm font-medium transition-all bg-warm-50/70 dark:bg-slate-800 border ${
                     touched.name && errors.name
                       ? 'border-rose-300 ring-2 ring-rose-200/50 bg-rose-50/30 text-rose-900 focus:ring-rose-400'
-                      : 'border-warm-200 text-slate-800 focus:bg-white focus:ring-2 focus:ring-purple-500 focus:border-transparent'
+                      : 'border-warm-200 dark:border-slate-700 text-slate-800 dark:text-white focus:bg-white dark:focus:bg-slate-800 focus:ring-2 focus:ring-purple-500 focus:border-transparent'
                   } focus:outline-none shadow-sm`}
                 />
               </div>
@@ -294,7 +294,7 @@ export const AddPersonModal: React.FC<AddPersonModalProps> = ({
             {/* Birthday Date Picker or Month/Day Selects */}
             <div>
               <div className="flex items-center justify-between mb-1.5">
-                <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider">
+                <label className="block text-xs font-bold text-slate-700 dark:text-slate-200 uppercase tracking-wider">
                   Birthday <span className="text-rose-500">*</span>
                 </label>
               </div>
@@ -309,10 +309,10 @@ export const AddPersonModal: React.FC<AddPersonModalProps> = ({
                     value={fullDate}
                     onChange={handleFullDateChange}
                     onBlur={() => handleBlur('birthday')}
-                    className={`w-full px-4 py-3 rounded-2xl text-sm font-medium transition-all bg-warm-50/70 border ${
+                    className={`w-full px-4 py-3 rounded-2xl text-sm font-medium transition-all bg-warm-50/70 dark:bg-slate-800 border ${
                       touched.birthday && errors.birthday
                         ? 'border-rose-300 ring-2 ring-rose-200/50 bg-rose-50/30 text-rose-900 focus:ring-rose-400'
-                        : 'border-warm-200 text-slate-800 focus:bg-white focus:ring-2 focus:ring-purple-500 focus:border-transparent'
+                        : 'border-warm-200 dark:border-slate-700 text-slate-800 dark:text-white focus:bg-white dark:focus:bg-slate-800 focus:ring-2 focus:ring-purple-500 focus:border-transparent'
                     } focus:outline-none shadow-sm`}
                   />
                 </div>
@@ -321,7 +321,7 @@ export const AddPersonModal: React.FC<AddPersonModalProps> = ({
                   <select
                     value={selectedMonth}
                     onChange={(e) => setSelectedMonth(parseInt(e.target.value, 10))}
-                    className="w-full px-3 py-3 rounded-2xl text-sm font-medium bg-warm-50/70 border border-warm-200 text-slate-800 focus:bg-white focus:ring-2 focus:ring-purple-500 focus:outline-none shadow-sm"
+                    className="w-full px-3 py-3 rounded-2xl text-sm font-medium bg-warm-50/70 dark:bg-slate-800 border border-warm-200 dark:border-slate-700 text-slate-800 dark:text-white focus:bg-white dark:focus:bg-slate-800 focus:ring-2 focus:ring-purple-500 focus:outline-none shadow-sm"
                   >
                     {MONTH_OPTIONS.map((m) => (
                       <option key={m.value} value={m.value}>
@@ -333,7 +333,7 @@ export const AddPersonModal: React.FC<AddPersonModalProps> = ({
                   <select
                     value={selectedDay > maxDays ? maxDays : selectedDay}
                     onChange={(e) => setSelectedDay(parseInt(e.target.value, 10))}
-                    className="w-full px-3 py-3 rounded-2xl text-sm font-medium bg-warm-50/70 border border-warm-200 text-slate-800 focus:bg-white focus:ring-2 focus:ring-purple-500 focus:outline-none shadow-sm"
+                    className="w-full px-3 py-3 rounded-2xl text-sm font-medium bg-warm-50/70 dark:bg-slate-800 border border-warm-200 dark:border-slate-700 text-slate-800 dark:text-white focus:bg-white dark:focus:bg-slate-800 focus:ring-2 focus:ring-purple-500 focus:outline-none shadow-sm"
                   >
                     {Array.from({ length: maxDays }, (_, i) => i + 1).map((d) => (
                       <option key={d} value={d}>
@@ -349,9 +349,9 @@ export const AddPersonModal: React.FC<AddPersonModalProps> = ({
                 <button
                   type="button"
                   onClick={handleToggleKnowsYear}
-                  className="text-xs font-semibold text-purple-700 hover:text-purple-900 flex items-center gap-1.5 transition-colors"
+                  className="text-xs font-semibold text-purple-700 dark:text-purple-400 hover:text-purple-900 dark:hover:text-purple-300 flex items-center gap-1.5 transition-colors"
                 >
-                  <span className={`w-4 h-4 rounded-md border flex items-center justify-center transition-colors ${!knowsYear ? 'bg-purple-600 border-purple-600 text-white' : 'bg-white border-warm-300'}`}>
+                  <span className={`w-4 h-4 rounded-md border flex items-center justify-center transition-colors ${!knowsYear ? 'bg-purple-600 border-purple-600 text-white' : 'bg-white dark:bg-slate-900 border-warm-300 dark:border-slate-700'}`}>
                     {!knowsYear && <Check className="w-3 h-3 stroke-[3]" />}
                   </span>
                   <span>I don't know the birth year (month & day only)</span>
@@ -369,7 +369,7 @@ export const AddPersonModal: React.FC<AddPersonModalProps> = ({
 
           {/* Row 2: Relationship Selector Chips */}
           <div>
-            <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-2">
+            <label className="block text-xs font-bold text-slate-700 dark:text-slate-200 uppercase tracking-wider mb-2">
               Relationship
             </label>
             <div className="grid grid-cols-2 sm:grid-cols-3 gap-2.5">
@@ -382,8 +382,8 @@ export const AddPersonModal: React.FC<AddPersonModalProps> = ({
                     onClick={() => setRelationship(rel.label)}
                     className={`p-3 rounded-2xl text-left border transition-all duration-200 flex items-center justify-between ${
                       isSelected
-                        ? 'border-purple-600 bg-purple-50 text-purple-950 ring-2 ring-purple-400/40 shadow-sm scale-[1.02]'
-                        : 'border-warm-200/90 bg-warm-50/60 hover:bg-warm-100/70 text-slate-700 hover:border-warm-300'
+                        ? 'border-purple-600 bg-purple-50 dark:bg-purple-950/50 text-purple-950 dark:text-purple-200 ring-2 ring-purple-400/40 shadow-sm scale-[1.02]'
+                        : 'border-warm-200/90 dark:border-slate-700 bg-warm-50/60 dark:bg-slate-800 hover:bg-warm-100/70 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 hover:border-warm-300 dark:hover:border-slate-600'
                     }`}
                   >
                     <div className="flex items-center gap-2">
@@ -402,13 +402,13 @@ export const AddPersonModal: React.FC<AddPersonModalProps> = ({
           </div>
 
           {/* Row 3: Reminder Preferences (Chips + Timing) */}
-          <div className="bg-warm-50/80 p-4 sm:p-5 rounded-2xl border border-warm-200/90 space-y-3">
+          <div className="bg-warm-50/80 dark:bg-slate-800/80 p-4 sm:p-5 rounded-2xl border border-warm-200/90 dark:border-slate-700 space-y-3">
             <div className="flex items-center justify-between">
-              <label className="text-xs font-bold text-slate-700 uppercase tracking-wider flex items-center gap-1.5">
-                <Bell className="w-3.5 h-3.5 text-purple-600" />
+              <label className="text-xs font-bold text-slate-700 dark:text-slate-200 uppercase tracking-wider flex items-center gap-1.5">
+                <Bell className="w-3.5 h-3.5 text-purple-600 dark:text-purple-400" />
                 <span>Reminder Triggers</span>
               </label>
-              <span className="text-[11px] text-slate-500 font-medium">Select one or more</span>
+              <span className="text-[11px] text-slate-500 dark:text-slate-400 font-medium">Select one or more</span>
             </div>
 
             {/* Reminder Options Chips */}
@@ -423,7 +423,7 @@ export const AddPersonModal: React.FC<AddPersonModalProps> = ({
                     className={`p-2.5 rounded-xl border text-left transition-all flex items-center justify-between text-xs font-bold ${
                       isChecked
                         ? 'bg-purple-600 text-white border-purple-600 shadow-sm'
-                        : 'bg-white text-slate-700 border-warm-200 hover:bg-warm-100/70'
+                        : 'bg-white dark:bg-slate-900 text-slate-700 dark:text-slate-300 border-warm-200 dark:border-slate-700 hover:bg-warm-100/70 dark:hover:bg-slate-800'
                     }`}
                   >
                     <div className="flex items-center gap-1.5">
@@ -438,7 +438,7 @@ export const AddPersonModal: React.FC<AddPersonModalProps> = ({
 
             {/* Preferred Reminder Time */}
             <div className="pt-2 flex items-center justify-between text-xs">
-              <span className="text-slate-600 font-semibold flex items-center gap-1">
+              <span className="text-slate-600 dark:text-slate-300 font-semibold flex items-center gap-1">
                 <Clock className="w-3.5 h-3.5 text-slate-400" />
                 <span>Preferred Reminder Time:</span>
               </span>
@@ -446,7 +446,7 @@ export const AddPersonModal: React.FC<AddPersonModalProps> = ({
                 type="time"
                 value={reminderTime}
                 onChange={(e) => setReminderTime(e.target.value)}
-                className="px-3 py-1.5 bg-white border border-warm-200 rounded-xl text-xs font-bold text-slate-800 focus:outline-none focus:ring-2 focus:ring-purple-500 shadow-sm"
+                className="px-3 py-1.5 bg-white dark:bg-slate-900 border border-warm-200 dark:border-slate-700 rounded-xl text-xs font-bold text-slate-800 dark:text-white focus:outline-none focus:ring-2 focus:ring-purple-500 shadow-sm"
               />
             </div>
           </div>
@@ -454,8 +454,8 @@ export const AddPersonModal: React.FC<AddPersonModalProps> = ({
           {/* Row 4: Optional Notes Field */}
           <div>
             <div className="flex items-center justify-between mb-1.5">
-              <label htmlFor="person-notes" className="text-xs font-bold text-slate-700 uppercase tracking-wider flex items-center gap-1.5">
-                <MessageSquare className="w-3.5 h-3.5 text-purple-600" />
+              <label htmlFor="person-notes" className="text-xs font-bold text-slate-700 dark:text-slate-200 uppercase tracking-wider flex items-center gap-1.5">
+                <MessageSquare className="w-3.5 h-3.5 text-purple-600 dark:text-purple-400" />
                 <span>Notes & Gift Ideas <span className="text-slate-400 font-normal lowercase">(optional)</span></span>
               </label>
               <span className="text-[11px] text-slate-400 font-medium">{notes.length}/200</span>
@@ -467,16 +467,16 @@ export const AddPersonModal: React.FC<AddPersonModalProps> = ({
               placeholder="e.g. Loves matcha lattes, allergic to peanuts, wants a vintage camera..."
               value={notes}
               onChange={(e) => setNotes(e.target.value)}
-              className="w-full px-4 py-2.5 rounded-2xl text-xs sm:text-sm font-medium bg-warm-50/70 border border-warm-200 text-slate-800 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:bg-white transition-all resize-none shadow-sm"
+              className="w-full px-4 py-2.5 rounded-2xl text-xs sm:text-sm font-medium bg-warm-50/70 dark:bg-slate-800 border border-warm-200 dark:border-slate-700 text-slate-800 dark:text-white placeholder-slate-400 dark:placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:bg-white dark:focus:bg-slate-800 transition-all resize-none shadow-sm"
             />
           </div>
 
           {/* Row 5: Action Footer (Cancel / Save) */}
-          <div className="pt-3 border-t border-slate-100 flex items-center justify-between gap-3">
+          <div className="pt-3 border-t border-slate-100 dark:border-slate-800 flex items-center justify-between gap-3">
             <button
               type="button"
               onClick={onClose}
-              className="px-5 py-3 rounded-2xl text-xs sm:text-sm font-bold text-slate-600 hover:bg-slate-100/80 hover:text-slate-800 transition-colors flex items-center gap-1.5"
+              className="px-5 py-3 rounded-2xl text-xs sm:text-sm font-bold text-slate-600 dark:text-slate-400 hover:bg-slate-100/80 dark:hover:bg-slate-800 hover:text-slate-800 dark:hover:text-slate-200 transition-colors flex items-center gap-1.5"
             >
               <ArrowLeft className="w-4 h-4" />
               <span>Cancel</span>

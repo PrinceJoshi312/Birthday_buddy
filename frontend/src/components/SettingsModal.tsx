@@ -2,7 +2,8 @@ import React, { useState, useEffect, useRef } from 'react';
 import { 
   X, Bell, BellOff, CheckCircle2, AlertTriangle, Smartphone, 
   Sparkles, Send, Play, PartyPopper,
-  Download, Upload, Database, Check, Loader2, ArrowLeft
+  Download, Upload, Database, Check, Loader2, ArrowLeft,
+  Sun, Moon, Monitor, Palette
 } from 'lucide-react';
 import { 
   getNotificationPermission, 
@@ -11,6 +12,17 @@ import {
   sendTestNotification, 
   NotificationPermissionState 
 } from '../utils/notificationService';
+import { Capacitor } from '@capacitor/core';
+import {
+  checkNotificationPermission as checkNativeNotificationPermission,
+  requestNotificationPermission as requestNativeNotificationPermission,
+  sendNativeTestNotification,
+} from '../utils/localNotificationsService';
+import {
+  ThemeMode,
+  getStoredTheme,
+  setStoredTheme
+} from '../utils/themeService';
 import { 
   CelebrationSoundType, 
   CELEBRATION_SOUNDS, 
@@ -38,6 +50,7 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onClose, o
   const [testSent, setTestSent] = useState(false);
   const [statusFeedback, setStatusFeedback] = useState('');
   const [selectedSound, setSelectedSound] = useState<CelebrationSoundType>('party_pop');
+  const [currentTheme, setCurrentTheme] = useState<ThemeMode>('system');
 
   // Backup & Restore State
   const [isExporting, setIsExporting] = useState(false);
@@ -50,7 +63,14 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onClose, o
 
   useEffect(() => {
     if (isOpen) {
-      setPermission(getNotificationPermission());
+      setCurrentTheme(getStoredTheme());
+      if (Capacitor.isNativePlatform()) {
+        checkNativeNotificationPermission().then((status) => {
+          setPermission(status === 'granted' ? 'granted' : status === 'denied' ? 'denied' : 'default');
+        });
+      } else {
+        setPermission(getNotificationPermission());
+      }
       setTestSent(false);
       setStatusFeedback('');
       setSelectedSound(getStoredCelebrationSound());
@@ -77,24 +97,52 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onClose, o
 
   if (!isOpen) return null;
 
+  const handleThemeChange = (mode: ThemeMode) => {
+    setCurrentTheme(mode);
+    setStoredTheme(mode);
+    setStatusFeedback(`Appearance updated to ${mode.charAt(0).toUpperCase() + mode.slice(1)}`);
+  };
+
   const handleRequestPermission = async () => {
-    const res = await requestNotificationPermission();
-    setPermission(res);
-    if (res === 'granted') {
-      setStatusFeedback('Notifications enabled successfully! 🎉');
-    } else if (res === 'denied') {
-      setStatusFeedback('Permission was blocked in your browser settings. You can re-enable it in browser site settings.');
+    if (Capacitor.isNativePlatform()) {
+      const res = await requestNativeNotificationPermission();
+      setPermission(res === 'granted' ? 'granted' : res === 'denied' ? 'denied' : 'default');
+      if (res === 'granted') {
+        setStatusFeedback('Notifications enabled successfully! 🎉');
+        onDataChanged?.();
+      } else if (res === 'denied') {
+        setStatusFeedback('Permission denied. You can also enable it in Android Settings > Apps > Birthday Buddy.');
+      }
+    } else {
+      const res = await requestNotificationPermission();
+      setPermission(res);
+      if (res === 'granted') {
+        setStatusFeedback('Notifications enabled successfully! 🎉');
+      } else if (res === 'denied') {
+        setStatusFeedback('Permission was blocked in your browser settings. You can re-enable it in browser site settings.');
+      }
     }
   };
 
   const handleSendTest = async () => {
-    const success = await sendTestNotification();
-    if (success) {
-      setTestSent(true);
-      setStatusFeedback('Test notification sent! Check your notification center 🎉');
-      setTimeout(() => setTestSent(false), 3000);
+    if (Capacitor.isNativePlatform()) {
+      const success = await sendNativeTestNotification();
+      if (success) {
+        setTestSent(true);
+        setStatusFeedback('Test notification sent! Check your Android notification shade 🎉');
+        setTimeout(() => setTestSent(false), 3000);
+      } else {
+        setStatusFeedback('Could not send test notification. Make sure notifications are allowed.');
+      }
     } else {
-      setStatusFeedback('Could not send test notification. Make sure permission is granted.');
+      const success = await sendTestNotification();
+      if (success) {
+        setTestSent(true);
+        setStatusFeedback('Test notification sent! Check your notification center 🎉');
+        setTimeout(() => setTestSent(false), 3000);
+      } else {
+        setStatusFeedback('Could not send test notification. Make sure permission is granted.');
+      }
     }
   };
 
@@ -190,7 +238,8 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onClose, o
     }
   };
 
-  const isSupported = isNotificationSupported();
+  const isNative = Capacitor.isNativePlatform();
+  const isSupported = isNative || isNotificationSupported();
 
   return (
     <div 
@@ -200,24 +249,24 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onClose, o
         paddingBottom: 'env(safe-area-inset-bottom, 0px)',
       }}
     >
-      <div className="relative w-full max-w-lg bg-white rounded-t-3xl sm:rounded-3xl shadow-2xl border-0 sm:border sm:border-warm-200 overflow-hidden transform transition-all animate-in fade-in zoom-in-95 duration-200 min-h-screen sm:min-h-0 sm:my-6 flex flex-col max-h-[100dvh] sm:max-h-[90vh]">
+      <div className="relative w-full max-w-lg bg-white dark:bg-slate-900 rounded-t-3xl sm:rounded-3xl shadow-2xl border-0 sm:border sm:border-warm-200 dark:border-slate-800 overflow-hidden transform transition-all animate-in fade-in zoom-in-95 duration-200 min-h-screen sm:min-h-0 sm:my-6 flex flex-col max-h-[100dvh] sm:max-h-[90vh]">
         {/* Sticky/Pinned Modal Header */}
-        <div className="sticky top-0 z-20 px-5 sm:px-8 pt-4 pb-4 bg-gradient-to-r from-purple-100/95 via-pink-100/85 to-amber-100/95 border-b border-warm-200/80 backdrop-blur-md flex-shrink-0">
+        <div className="sticky top-0 z-20 px-5 sm:px-8 pt-4 pb-4 bg-gradient-to-r from-purple-100/95 via-pink-100/85 to-amber-100/95 dark:from-purple-950/95 dark:via-slate-900/90 dark:to-amber-950/95 border-b border-warm-200/80 dark:border-slate-800 backdrop-blur-md flex-shrink-0">
           <div className="flex items-center justify-between gap-2 mb-2">
             <button
               type="button"
               onClick={onClose}
-              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-white/95 hover:bg-white text-slate-700 hover:text-purple-700 border border-warm-300/80 text-xs font-extrabold shadow-xs active:scale-95 transition-all"
+              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-white/95 dark:bg-slate-800 hover:bg-white text-slate-700 dark:text-slate-200 hover:text-purple-700 border border-warm-300/80 dark:border-slate-700 text-xs font-extrabold shadow-xs active:scale-95 transition-all"
               aria-label="Back"
             >
-              <ArrowLeft className="w-4 h-4 text-purple-600" />
+              <ArrowLeft className="w-4 h-4 text-purple-600 dark:text-purple-400" />
               <span>Back</span>
             </button>
 
             <button
               type="button"
               onClick={onClose}
-              className="w-8 h-8 rounded-xl bg-white/95 hover:bg-white text-slate-400 hover:text-slate-700 flex items-center justify-center transition-colors shadow-xs active:scale-95"
+              className="w-8 h-8 rounded-xl bg-white/95 dark:bg-slate-800 hover:bg-white text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 flex items-center justify-center transition-colors shadow-xs active:scale-95"
               aria-label="Close"
             >
               <X className="w-4 h-4" />
@@ -230,11 +279,11 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onClose, o
                 <Sparkles className="w-3 h-3" /> Preferences
               </span>
             </div>
-            <h2 className="text-xl sm:text-2xl font-black text-slate-800 tracking-tight mt-1">
+            <h2 className="text-xl sm:text-2xl font-black text-slate-800 dark:text-white tracking-tight mt-1">
               Settings & Backup ⚙️
             </h2>
-            <p className="text-xs text-slate-500 font-medium">
-              Manage sounds, reminders, and offline data backups
+            <p className="text-xs text-slate-500 dark:text-slate-400 font-medium">
+              Manage theme, reminders, sounds, and offline data backups
             </p>
           </div>
         </div>
@@ -243,11 +292,54 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onClose, o
         <div className="overflow-y-auto flex-1 p-5 sm:p-8 space-y-6">
           {/* Status Feedback Banner */}
           {statusFeedback && (
-            <div className="p-3.5 rounded-2xl bg-purple-50 border border-purple-200 text-purple-900 text-xs font-semibold flex items-center gap-2 animate-in fade-in duration-200">
-              <Sparkles className="w-4 h-4 text-purple-600 flex-shrink-0" />
+            <div className="p-3.5 rounded-2xl bg-purple-50 dark:bg-purple-950/50 border border-purple-200 dark:border-purple-800 text-purple-900 dark:text-purple-200 text-xs font-semibold flex items-center gap-2 animate-in fade-in duration-200">
+              <Sparkles className="w-4 h-4 text-purple-600 dark:text-purple-400 flex-shrink-0" />
               <span>{statusFeedback}</span>
             </div>
           )}
+
+          {/* 0. APPEARANCE (LIGHT / DARK / SYSTEM) */}
+          <div className="bg-warm-50/80 dark:bg-slate-800/80 rounded-2xl p-5 border border-warm-200 dark:border-slate-700 space-y-3">
+            <div className="flex items-center justify-between">
+              <span className="text-xs font-bold text-slate-700 dark:text-slate-200 uppercase tracking-wider flex items-center gap-1.5">
+                <Palette className="w-3.5 h-3.5 text-purple-600 dark:text-purple-400" />
+                <span>Appearance</span>
+              </span>
+              <span className="text-[11px] font-bold px-2 py-0.5 rounded-full bg-purple-100 dark:bg-purple-900/50 text-purple-800 dark:text-purple-300 border border-purple-200 dark:border-purple-800 capitalize">
+                {currentTheme}
+              </span>
+            </div>
+
+            <p className="text-xs text-slate-600 dark:text-slate-400 leading-relaxed">
+              Choose your preferred visual appearance or match your device system settings.
+            </p>
+
+            <div className="grid grid-cols-3 gap-2 pt-1">
+              {[
+                { id: 'light', label: 'Light', icon: Sun },
+                { id: 'dark', label: 'Dark', icon: Moon },
+                { id: 'system', label: 'System', icon: Monitor },
+              ].map((theme) => {
+                const isSelected = currentTheme === theme.id;
+                const IconComponent = theme.icon;
+                return (
+                  <button
+                    key={theme.id}
+                    type="button"
+                    onClick={() => handleThemeChange(theme.id as ThemeMode)}
+                    className={`py-2.5 px-3 rounded-xl border text-center transition-all flex flex-col items-center gap-1.5 text-xs font-bold ${
+                      isSelected
+                        ? 'bg-purple-600 text-white border-purple-600 shadow-sm ring-2 ring-purple-400/40'
+                        : 'bg-white dark:bg-slate-900 text-slate-700 dark:text-slate-300 border-warm-200 dark:border-slate-700 hover:bg-warm-100/70 dark:hover:bg-slate-800'
+                    }`}
+                  >
+                    <IconComponent className="w-4 h-4" />
+                    <span>{theme.label}</span>
+                  </button>
+                );
+              })}
+            </div>
+          </div>
 
           {/* 1. DATA & BACKUP (OFFLINE STORAGE) */}
           <div className="bg-warm-50/80 rounded-2xl p-5 border border-warm-200 space-y-3">
@@ -354,56 +446,53 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onClose, o
           </div>
 
           {/* 3. NOTIFICATION STATUS BOX */}
-          <div className="bg-warm-50/80 rounded-2xl p-5 border border-warm-200 space-y-3">
+          <div className="bg-warm-50/80 dark:bg-slate-800/80 rounded-2xl p-5 border border-warm-200 dark:border-slate-700 space-y-3">
             <div className="flex items-center justify-between">
-              <span className="text-xs font-bold text-slate-700 uppercase tracking-wider flex items-center gap-1.5">
-                <Bell className="w-3.5 h-3.5 text-purple-600" />
+              <span className="text-xs font-bold text-slate-700 dark:text-slate-200 uppercase tracking-wider flex items-center gap-1.5">
+                <Bell className="w-3.5 h-3.5 text-purple-600 dark:text-purple-400" />
                 <span>Notification Status</span>
               </span>
               <span className={`text-xs font-black px-2.5 py-1 rounded-full flex items-center gap-1.5 ${
                 permission === 'granted'
-                  ? 'bg-emerald-100 text-emerald-800 border border-emerald-300'
-                  : permission === 'denied'
-                  ? 'bg-rose-100 text-rose-800 border border-rose-300'
-                  : 'bg-amber-100 text-amber-800 border border-amber-300'
+                  ? 'bg-emerald-100 dark:bg-emerald-950/60 text-emerald-800 dark:text-emerald-300 border border-emerald-300 dark:border-emerald-800'
+                  : 'bg-rose-100 dark:bg-rose-950/60 text-rose-800 dark:text-rose-300 border border-rose-300 dark:border-rose-800'
               }`}>
                 {permission === 'granted' ? (
                   <>
-                    <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600" />
-                    <span>Enabled</span>
-                  </>
-                ) : permission === 'denied' ? (
-                  <>
-                    <BellOff className="w-3.5 h-3.5 text-rose-600" />
-                    <span>Blocked</span>
+                    <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400" />
+                    <span>Enabled ✓</span>
                   </>
                 ) : (
                   <>
-                    <Bell className="w-3.5 h-3.5 text-amber-600" />
-                    <span>Needs Permission</span>
+                    <BellOff className="w-3.5 h-3.5 text-rose-600 dark:text-rose-400" />
+                    <span>{isNative ? 'Notifications are disabled' : permission === 'denied' ? 'Blocked' : 'Needs Permission'}</span>
                   </>
                 )}
               </span>
             </div>
 
-            <p className="text-xs text-slate-600 leading-relaxed">
+            <p className="text-xs text-slate-600 dark:text-slate-400 leading-relaxed">
               {permission === 'granted'
-                ? 'Birthday Buddy will remind you of upcoming and same-day birthdays when you open the app or while it is active in your browser.'
-                : permission === 'denied'
-                ? 'Notifications are blocked in your browser settings. To receive reminders, click the lock/settings icon in your browser address bar and allow notifications.'
-                : 'Enable browser notifications so Birthday Buddy can alert you when a friend or family member has an upcoming birthday.'}
+                ? isNative 
+                  ? 'Birthday Buddy can send birthday reminders.'
+                  : 'Birthday Buddy will remind you of upcoming and same-day birthdays when you open the app or while it is active in your browser.'
+                : isNative
+                  ? 'Notifications are disabled. Enable notifications so Birthday Buddy can alert you when a friend or family member has an upcoming birthday.'
+                  : permission === 'denied'
+                  ? 'Notifications are blocked in your browser settings. To receive reminders, click the lock/settings icon in your browser address bar and allow notifications.'
+                  : 'Enable browser notifications so Birthday Buddy can alert you when a friend or family member has an upcoming birthday.'}
             </p>
 
-            {/* Enable or Test Actions */}
+            {/* Enable or Test Actions: ALWAYS show Enable button on Android if not granted */}
             <div className="pt-2 flex flex-wrap gap-2.5">
-              {permission !== 'granted' && isSupported && (
+              {permission !== 'granted' && (
                 <button
                   type="button"
                   onClick={handleRequestPermission}
                   className="px-5 py-2.5 rounded-xl bg-purple-600 hover:bg-purple-700 text-white text-xs font-extrabold shadow-sm transition-all active:scale-95 flex items-center gap-1.5"
                 >
                   <Bell className="w-3.5 h-3.5" />
-                  <span>Enable Browser Notifications</span>
+                  <span>{isNative ? 'Enable Notifications' : 'Enable Browser Notifications'}</span>
                 </button>
               )}
 
@@ -412,23 +501,25 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onClose, o
                   type="button"
                   onClick={handleSendTest}
                   disabled={testSent}
-                  className="px-4 py-2 rounded-xl bg-white hover:bg-warm-100 text-slate-700 border border-warm-300 text-xs font-bold shadow-sm transition-all active:scale-95 flex items-center gap-1.5"
+                  className="px-4 py-2 rounded-xl bg-white dark:bg-slate-900 hover:bg-warm-100 dark:hover:bg-slate-800 text-slate-700 dark:text-slate-300 border border-warm-300 dark:border-slate-700 text-xs font-bold shadow-sm transition-all active:scale-95 flex items-center gap-1.5"
                 >
-                  <Send className="w-3.5 h-3.5 text-purple-600" />
-                  <span>{testSent ? 'Test Sent! 🎉' : 'Send Test Reminder'}</span>
+                  <Send className="w-3.5 h-3.5 text-purple-600 dark:text-purple-400" />
+                  <span>{testSent ? 'Test Sent! 🎉' : isNative ? 'Send Test Notification' : 'Send Test Reminder'}</span>
                 </button>
               )}
             </div>
           </div>
 
           {/* 4. Honest Platform Transparency Note */}
-          <div className="bg-slate-50 rounded-2xl p-4 sm:p-5 border border-slate-200 text-slate-600 space-y-2">
-            <div className="flex items-center gap-2 text-slate-800 font-bold text-xs uppercase tracking-wider">
-              <Smartphone className="w-4 h-4 text-purple-600" />
+          <div className="bg-slate-50 dark:bg-slate-800/80 rounded-2xl p-4 sm:p-5 border border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-400 space-y-2">
+            <div className="flex items-center gap-2 text-slate-800 dark:text-slate-200 font-bold text-xs uppercase tracking-wider">
+              <Smartphone className="w-4 h-4 text-purple-600 dark:text-purple-400" />
               <span>How Reminders Work</span>
             </div>
-            <p className="text-xs text-slate-500 leading-relaxed">
-              Birthday Buddy runs 100% on your device without servers. Reminders are checked when the app opens or while running. For best results on mobile, add Birthday Buddy to your Home Screen.
+            <p className="text-xs text-slate-500 dark:text-slate-400 leading-relaxed">
+              {isNative
+                ? 'Birthday Buddy uses Android’s native Alarm & Notification Manager to deliver alerts on this device at 9:00 AM on your chosen reminder days, even when the app is closed.'
+                : 'Birthday Buddy runs 100% on your device without servers. Reminders are checked when the app opens or while running. For best results on mobile, add Birthday Buddy to your Home Screen.'}
             </p>
           </div>
 
@@ -437,7 +528,7 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onClose, o
             <button
               type="button"
               onClick={onClose}
-              className="px-6 py-2.5 rounded-2xl bg-slate-900 text-white font-bold text-xs hover:bg-slate-800 transition-colors shadow-sm"
+              className="px-6 py-2.5 rounded-2xl bg-slate-900 dark:bg-purple-600 hover:bg-slate-800 dark:hover:bg-purple-700 text-white font-bold text-xs transition-colors shadow-sm"
             >
               Done
             </button>

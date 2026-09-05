@@ -40,19 +40,19 @@ export const BuddiesScreen: React.FC<BuddiesScreenProps> = ({
   return (
     <div className="space-y-6 animate-in fade-in duration-200">
       {/* Buddies Page Header */}
-      <div className="flex items-center justify-between gap-4 pb-2 border-b border-warm-200/60">
+      <div className="flex items-center justify-between gap-4 pb-2 border-b border-warm-200/60 dark:border-slate-800">
         <div className="flex items-center gap-3">
           <div className="w-10 h-10 rounded-2xl bg-gradient-to-tr from-purple-600 to-pink-500 text-white flex items-center justify-center shadow-soft">
             <Users className="w-5 h-5" />
           </div>
           <div>
-            <h1 className="text-xl sm:text-2xl font-black text-slate-800 tracking-tight flex items-center gap-2">
+            <h1 className="text-xl sm:text-2xl font-black text-slate-800 dark:text-white tracking-tight flex items-center gap-2">
               <span>Buddies</span>
-              <span className="text-xs px-2.5 py-0.5 rounded-full bg-purple-100 text-purple-800 font-bold">
+              <span className="text-xs px-2.5 py-0.5 rounded-full bg-purple-100 dark:bg-purple-900/50 text-purple-800 dark:text-purple-300 font-bold">
                 {people.length}
               </span>
             </h1>
-            <p className="text-xs text-slate-500 font-medium">
+            <p className="text-xs text-slate-500 dark:text-slate-400 font-medium">
               All your saved birthdays in one place.
             </p>
           </div>

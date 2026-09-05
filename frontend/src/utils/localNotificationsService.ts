@@ -40,6 +40,28 @@ export async function requestNotificationPermission(): Promise<NotificationStatu
   }
 }
 
+export const REMINDER_CHANNEL_ID = 'birthday_reminders';
+
+/**
+ * Initializes the Android notification channel for birthday reminders.
+ * Only executes on native Capacitor platforms (Android 8.0+).
+ */
+export async function initNotificationChannel(): Promise<void> {
+  if (!Capacitor.isNativePlatform()) return;
+  try {
+    await LocalNotifications.createChannel({
+      id: REMINDER_CHANNEL_ID,
+      name: 'Birthday Reminders',
+      description: 'Alerts and notifications for upcoming birthdays',
+      importance: 4, // IMPORTANCE_HIGH (makes sound and shows heads-up banner)
+      visibility: 1, // VISIBILITY_PUBLIC
+      vibration: true,
+    });
+  } catch (err) {
+    console.warn('Could not create notification channel:', err);
+  }
+}
+
 /**
  * Generates a deterministic positive integer notification ID from person ID and offset days.
  * This guarantees we can cancel/update reminders without creating duplicates.
@@ -64,6 +86,8 @@ export async function schedulePersonBirthdayReminders(person: Person): Promise<n
   if (perm !== 'granted') return 0;
 
   try {
+    await initNotificationChannel();
+
     // 1. Cancel previous notifications for this person to avoid duplicates
     const offsets = [0, 1, 3, 7];
     const idsToCancel = offsets.map((d) => ({ id: getNotificationId(person.id, d) }));
@@ -124,6 +148,7 @@ export async function schedulePersonBirthdayReminders(person: Person): Promise<n
           title,
           body,
           schedule: { at: scheduleTime },
+          channelId: REMINDER_CHANNEL_ID,
           sound: undefined,
           actionTypeId: '',
           extra: { personId: person.id },
@@ -141,3 +166,49 @@ export async function schedulePersonBirthdayReminders(person: Person): Promise<n
     return 0;
   }
 }
+
+/**
+ * Sends an immediate test notification on native Android.
+ */
+export async function sendNativeTestNotification(): Promise<boolean> {
+  if (!Capacitor.isNativePlatform()) return false;
+  try {
+    const perm = await checkNotificationPermission();
+    if (perm !== 'granted') return false;
+
+    await initNotificationChannel();
+    await LocalNotifications.schedule({
+      notifications: [
+        {
+          id: 999999,
+          title: '🎂 Birthday Buddy Test',
+          body: 'Notifications are working! You will receive birthday reminders right on time 🎉',
+          schedule: { at: new Date(Date.now() + 500) },
+          channelId: REMINDER_CHANNEL_ID,
+        },
+      ],
+    });
+    return true;
+  } catch (err) {
+    console.warn('Failed to send native test notification:', err);
+    return false;
+  }
+}
+
+/**
+ * Schedules reminders for all buddies in the list whose reminders are enabled.
+ * Only executes if notification permission is granted on native platform.
+ */
+export async function syncAllBirthdayReminders(people: Person[]): Promise<number> {
+  if (!Capacitor.isNativePlatform() || !people || people.length === 0) return 0;
+  const perm = await checkNotificationPermission();
+  if (perm !== 'granted') return 0;
+
+  let totalScheduled = 0;
+  for (const person of people) {
+    const count = await schedulePersonBirthdayReminders(person);
+    totalScheduled += count;
+  }
+  return totalScheduled;
+}
+

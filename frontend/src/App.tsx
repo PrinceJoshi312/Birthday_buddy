@@ -20,10 +20,13 @@ import { ReminderSetupDialog } from './components/ReminderSetupDialog';
 import { checkAndSendBirthdayReminders } from './utils/notificationService';
 import { initHistoryState, pushNav, popNav, AppNavState } from './utils/navigation';
 import { initStatusBar } from './utils/statusBarService';
+import { initTheme } from './utils/themeService';
 import { 
   checkNotificationPermission, 
   requestNotificationPermission, 
-  schedulePersonBirthdayReminders 
+  schedulePersonBirthdayReminders,
+  initNotificationChannel,
+  syncAllBirthdayReminders
 } from './utils/localNotificationsService';
 
 export function App() {
@@ -109,9 +112,19 @@ export function App() {
 
   // Initial load, Safe Area, History & Capacitor Back Button setup
   useEffect(() => {
-    loadUpcomingBirthdays();
+    const cleanupTheme = initTheme();
+    loadUpcomingBirthdays().then((data) => {
+      if (Capacitor.isNativePlatform() && data.length > 0) {
+        checkNotificationPermission().then((perm) => {
+          if (perm === 'granted') {
+            syncAllBirthdayReminders(data);
+          }
+        });
+      }
+    });
     initHistoryState();
     initStatusBar();
+    initNotificationChannel();
 
     // 1. Unified Capacitor Native Android Back Button & Back Gesture listener
     const backListenerPromise = CapacitorApp.addListener('backButton', () => {
@@ -185,6 +198,7 @@ export function App() {
     window.addEventListener('popstate', handlePopState);
 
     return () => {
+      cleanupTheme();
       window.removeEventListener('popstate', handlePopState);
       backListenerPromise.then((sub) => sub.remove()).catch(() => {});
     };
@@ -247,8 +261,6 @@ export function App() {
   const handleAddPerson = async (data: PersonInput) => {
     const created = await createPerson(data);
     await loadUpcomingBirthdays();
-    setIsAddModalOpen(false);
-    popNav();
 
     // 1. Standard Web Browser Mode:
     // Pure web experience — no native Capacitor permission prompts or errors
@@ -261,36 +273,46 @@ export function App() {
     try {
       const currentPerm = await checkNotificationPermission();
       if (currentPerm === 'granted') {
-        // Permission already granted: prompt reminder setup directly
-        setNewlyAddedPerson(created);
-        setIsReminderSetupOpen(true);
+        // Permission is already granted: schedule reminders for the new person directly
+        await schedulePersonBirthdayReminders(created);
+        showToast(`🎉 Added ${created.name} & scheduled reminders! 🔔`);
       } else {
-        // First prompt friendly notification permission dialog
-        setNewlyAddedPerson(created);
-        setIsNotificationPermissionOpen(true);
+        // First-time notification prompt: check if user previously chose Maybe Later
+        const hasAnsweredPrompt = localStorage.getItem('bb_notif_prompt_answered');
+        if (!hasAnsweredPrompt) {
+          setNewlyAddedPerson(created);
+          setIsNotificationPermissionOpen(true);
+        } else {
+          // Do not repeatedly annoy the user if they choose Maybe Later
+          showToast(`🎉 Added ${created.name} to Birthday Buddy!`);
+        }
       }
     } catch {
       showToast(`🎉 Added ${created.name} to Birthday Buddy!`);
     }
   };
 
-  // Post-Add Notification Permission Dialog Handlers (Capacitor Android only)
+  // First-Time Notification Pre-Permission Dialog Handlers (Capacitor Android only)
   const handleAllowNotifications = async () => {
-    if (!Capacitor.isNativePlatform()) {
-      setIsNotificationPermissionOpen(false);
-      return;
-    }
-    const status = await requestNotificationPermission();
+    localStorage.setItem('bb_notif_prompt_answered', 'true');
     setIsNotificationPermissionOpen(false);
-    if (status === 'granted' && newlyAddedPerson) {
-      // Next show reminder setup dialog
-      setIsReminderSetupOpen(true);
+
+    if (!Capacitor.isNativePlatform()) return;
+
+    const status = await requestNotificationPermission();
+    if (status === 'granted') {
+      if (newlyAddedPerson) {
+        await schedulePersonBirthdayReminders(newlyAddedPerson);
+      }
+      await syncAllBirthdayReminders(people);
+      showToast('🔔 Birthday reminders enabled!');
     } else {
       showToast('Notifications not enabled');
     }
   };
 
   const handleNotNowNotifications = () => {
+    localStorage.setItem('bb_notif_prompt_answered', 'true');
     setIsNotificationPermissionOpen(false);
     if (newlyAddedPerson) {
       showToast(`🎉 Added ${newlyAddedPerson.name} to Birthday Buddy!`);
@@ -400,7 +422,7 @@ export function App() {
   const nextPerson = people.length > 0 ? people[0] : null;
 
   return (
-    <div className="min-h-screen bg-[#FAF8F5] text-slate-800 flex flex-col font-sans selection:bg-purple-200 selection:text-purple-900 pb-24 sm:pb-12">
+    <div className="min-h-screen bg-[#FAF8F5] dark:bg-slate-950 text-slate-800 dark:text-slate-100 flex flex-col font-sans selection:bg-purple-200 selection:text-purple-900 pb-24 sm:pb-12 transition-colors duration-200">
       {/* Toast Notification */}
       {toastMessage && (
         <div className="fixed top-5 left-1/2 -translate-x-1/2 z-50 animate-in fade-in slide-in-from-top-4 duration-300">
@@ -616,8 +638,8 @@ export function App() {
       {/* Post-Add Friendly Notification Permission Dialog (Capacitor Android only) */}
       <NotificationPermissionDialog
         isOpen={isNotificationPermissionOpen}
-        onAllow={handleAllowNotifications}
-        onNotNow={handleNotNowNotifications}
+        onEnable={handleAllowNotifications}
+        onMaybeLater={handleNotNowNotifications}
       />
 
       {/* Post-Permission Friendly Reminder Setup Dialog (Capacitor Android only) */}
@@ -636,7 +658,7 @@ export function App() {
       />
 
       {/* Footer */}
-      <footer className="mt-auto py-6 border-t border-warm-200/60 text-center text-xs text-slate-400">
+      <footer className="mt-auto py-6 border-t border-warm-200/60 dark:border-slate-800 text-center text-xs text-slate-400 dark:text-slate-500">
         <p>Birthday Buddy — Never forget someone important 🎂</p>
       </footer>
     </div>

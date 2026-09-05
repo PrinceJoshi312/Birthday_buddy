@@ -26,7 +26,7 @@ export const BottomNav: React.FC<BottomNavProps> = ({
 
   return (
     <nav
-      className="sm:hidden fixed bottom-0 left-0 right-0 z-40 bg-white/95 backdrop-blur-md border-t border-warm-200/80 shadow-lg"
+      className="sm:hidden fixed bottom-0 left-0 right-0 z-40 bg-white/95 dark:bg-slate-950/95 backdrop-blur-md border-t border-warm-200/80 dark:border-slate-800 shadow-lg"
       style={{ paddingBottom: 'calc(0.625rem + env(safe-area-inset-bottom, 0px))' }}
     >
       <div className="grid grid-cols-3 items-center w-full max-w-md mx-auto pt-2.5 px-4">
@@ -36,8 +36,8 @@ export const BottomNav: React.FC<BottomNavProps> = ({
           onClick={handleHomeClick}
           className={`flex flex-col items-center justify-center gap-1 text-[10px] active:scale-95 transition-all ${
             activeTab === 'home'
-              ? 'text-purple-700 font-extrabold'
-              : 'text-slate-500 hover:text-purple-700 font-medium'
+              ? 'text-purple-700 dark:text-purple-400 font-extrabold'
+              : 'text-slate-500 dark:text-slate-400 hover:text-purple-700 dark:hover:text-purple-300 font-medium'
           }`}
         >
           <Home className={`w-5 h-5 ${activeTab === 'home' ? 'stroke-[2.5]' : ''}`} />
@@ -63,8 +63,8 @@ export const BottomNav: React.FC<BottomNavProps> = ({
           onClick={handleBuddiesClick}
           className={`flex flex-col items-center justify-center gap-1 text-[10px] active:scale-95 transition-all ${
             activeTab === 'buddies'
-              ? 'text-purple-700 font-extrabold'
-              : 'text-slate-500 hover:text-purple-700 font-medium'
+              ? 'text-purple-700 dark:text-purple-400 font-extrabold'
+              : 'text-slate-500 dark:text-slate-400 hover:text-purple-700 dark:hover:text-purple-300 font-medium'
           }`}
         >
           <Users className={`w-5 h-5 ${activeTab === 'buddies' ? 'stroke-[2.5]' : ''}`} />

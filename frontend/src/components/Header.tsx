@@ -24,7 +24,7 @@ export const Header: React.FC<HeaderProps> = ({
 
   return (
     <header 
-      className="sticky top-0 z-30 bg-[#FAF8F5]/90 backdrop-blur-md border-b border-warm-200/70 px-3 sm:px-8 pb-3 transition-all"
+      className="sticky top-0 z-30 bg-[#FAF8F5]/90 dark:bg-slate-950/90 backdrop-blur-md border-b border-warm-200/70 dark:border-slate-800 px-3 sm:px-8 pb-3 transition-all"
       style={{ paddingTop: 'calc(0.75rem + env(safe-area-inset-top, 0px))' }}
     >
       <div className="max-w-6xl mx-auto flex items-center justify-between gap-2 sm:gap-4">
@@ -41,11 +41,11 @@ export const Header: React.FC<HeaderProps> = ({
           </div>
           <div className="min-w-0">
             <div className="flex items-center gap-2">
-              <h1 className="text-lg sm:text-2xl font-black tracking-tight text-slate-800 whitespace-nowrap">
+              <h1 className="text-lg sm:text-2xl font-black tracking-tight text-slate-800 dark:text-white whitespace-nowrap">
                 Birthday<span className="gradient-text font-black">Buddy</span>
               </h1>
             </div>
-            <p className="hidden sm:block text-xs text-slate-500 font-medium tracking-tight truncate">
+            <p className="hidden sm:block text-xs text-slate-500 dark:text-slate-400 font-medium tracking-tight truncate">
               Never forget someone important.
             </p>
           </div>
@@ -53,14 +53,14 @@ export const Header: React.FC<HeaderProps> = ({
 
         {/* Desktop Navigation Tabs */}
         {onSelectTab && (
-          <div className="hidden md:flex items-center gap-1.5 bg-warm-100/80 p-1 rounded-2xl border border-warm-200/70">
+          <div className="hidden md:flex items-center gap-1.5 bg-warm-100/80 dark:bg-slate-800/80 p-1 rounded-2xl border border-warm-200/70 dark:border-slate-700">
             <button
               type="button"
               onClick={() => onSelectTab('home')}
               className={`flex items-center gap-1.5 px-4 py-1.5 rounded-xl text-xs font-extrabold transition-all ${
                 activeTab === 'home'
-                  ? 'bg-white text-purple-700 shadow-xs'
-                  : 'text-slate-600 hover:text-purple-700'
+                  ? 'bg-white dark:bg-slate-900 text-purple-700 dark:text-purple-300 shadow-xs'
+                  : 'text-slate-600 dark:text-slate-400 hover:text-purple-700 dark:hover:text-purple-300'
               }`}
             >
               <Home className="w-3.5 h-3.5" />
@@ -71,8 +71,8 @@ export const Header: React.FC<HeaderProps> = ({
               onClick={() => onSelectTab('buddies')}
               className={`flex items-center gap-1.5 px-4 py-1.5 rounded-xl text-xs font-extrabold transition-all ${
                 activeTab === 'buddies'
-                  ? 'bg-white text-purple-700 shadow-xs'
-                  : 'text-slate-600 hover:text-purple-700'
+                  ? 'bg-white dark:bg-slate-900 text-purple-700 dark:text-purple-300 shadow-xs'
+                  : 'text-slate-600 dark:text-slate-400 hover:text-purple-700 dark:hover:text-purple-300'
               }`}
             >
               <Users className="w-3.5 h-3.5" />
@@ -88,7 +88,7 @@ export const Header: React.FC<HeaderProps> = ({
             type="button"
             onClick={onOpenSettings}
             title="Settings & Backup"
-            className="w-9 h-9 sm:w-10 sm:h-10 rounded-2xl bg-white hover:bg-warm-100/80 border border-warm-200 text-slate-500 hover:text-slate-700 flex items-center justify-center transition-colors shadow-sm active:scale-95 flex-shrink-0"
+            className="w-9 h-9 sm:w-10 sm:h-10 rounded-2xl bg-white dark:bg-slate-900 hover:bg-warm-100/80 dark:hover:bg-slate-800 border border-warm-200 dark:border-slate-800 text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 flex items-center justify-center transition-colors shadow-sm active:scale-95 flex-shrink-0"
             aria-label="Settings & Backup"
           >
             <Settings className="w-4 h-4" />

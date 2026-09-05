@@ -29,13 +29,13 @@ export const SearchBar: React.FC<SearchBarProps> = ({
             placeholder="Search by name, notes..."
             value={searchQuery}
             onChange={(e) => onSearchChange(e.target.value)}
-            className="w-full pl-9 pr-8 py-2.5 rounded-2xl bg-white border border-warm-200 text-xs sm:text-sm font-medium text-slate-800 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent shadow-sm transition-all"
+            className="w-full pl-9 pr-8 py-2.5 rounded-2xl bg-white dark:bg-slate-900 border border-warm-200 dark:border-slate-800 text-xs sm:text-sm font-medium text-slate-800 dark:text-slate-100 placeholder-slate-400 dark:placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent shadow-sm transition-all"
           />
           {searchQuery && (
             <button
               type="button"
               onClick={() => onSearchChange('')}
-              className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 rounded-full bg-slate-200 hover:bg-slate-300 text-slate-600 flex items-center justify-center text-[10px] transition-colors"
+              className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 rounded-full bg-slate-200 dark:bg-slate-700 hover:bg-slate-300 dark:hover:bg-slate-600 text-slate-600 dark:text-slate-200 flex items-center justify-center text-[10px] transition-colors"
               title="Clear search"
             >
               ✕
@@ -44,8 +44,8 @@ export const SearchBar: React.FC<SearchBarProps> = ({
         </div>
 
         {/* Counter Badge */}
-        <div className="text-xs text-slate-500 font-semibold self-end sm:self-center">
-          Showing <strong className="text-purple-700">{totalResults}</strong> {totalResults === 1 ? 'person' : 'people'}
+        <div className="text-xs text-slate-500 dark:text-slate-400 font-semibold self-end sm:self-center">
+          Showing <strong className="text-purple-700 dark:text-purple-400">{totalResults}</strong> {totalResults === 1 ? 'person' : 'people'}
         </div>
       </div>
 
@@ -60,8 +60,8 @@ export const SearchBar: React.FC<SearchBarProps> = ({
               onClick={() => onCategoryChange(cat)}
               className={`px-3 py-1.5 rounded-xl text-xs font-bold whitespace-nowrap transition-all ${
                 isSelected
-                  ? 'bg-slate-900 text-white shadow-sm scale-105'
-                  : 'bg-white border border-warm-200 text-slate-600 hover:bg-warm-100/60'
+                  ? 'bg-slate-900 dark:bg-purple-600 text-white shadow-sm scale-105'
+                  : 'bg-white dark:bg-slate-900 border border-warm-200 dark:border-slate-800 text-slate-600 dark:text-slate-300 hover:bg-warm-100/60 dark:hover:bg-slate-800'
               }`}
             >
               {cat}
